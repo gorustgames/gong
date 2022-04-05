@@ -33,14 +33,18 @@ type Bat struct {
 
 func NewBat(playerLocation PlayerLocation, playerType PlayerType) *Bat {
 
-	_batImage, _, err := ebitenutil.NewImageFromFile("assets/bat00.png", ebiten.FilterDefault)
+	fileName := "assets/bat00.png"
+	if playerLocation == RightPlayer {
+		fileName = "assets/bat10.png"
+	}
+	_batImage, _, err := ebitenutil.NewImageFromFile(fileName, ebiten.FilterDefault)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	_xPos := -40.0
 	if playerLocation == RightPlayer {
-		_xPos = 690.0
+		_xPos = 680.0
 	}
 
 	return &Bat{
