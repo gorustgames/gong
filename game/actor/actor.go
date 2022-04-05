@@ -16,7 +16,7 @@ type GameActor interface {
 // see https://stackoverflow.com/questions/17077074/array-of-pointers-to-different-struct-implementing-same-interface
 func CreateActors() []GameActor {
 	var batPlayer *Bat
-	batPlayer = NewBat()
+	batPlayer = NewBat(LeftPlayer, Human)
 
 	var ball *Ball
 	ball = NewBall()
