@@ -45,7 +45,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	screen.DrawImage(background, op)
 
 	for _, actor := range g.actors {
-		actor.Draw()
+		actor.Draw(screen)
 	}
 
 }
@@ -58,6 +58,6 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 
 func CreateGame() *Game {
 	return &Game{
-		actors: actor.CreateActors(background),
+		actors: actor.CreateActors(),
 	}
 }

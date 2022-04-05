@@ -2,12 +2,10 @@ package actor
 
 import "github.com/hajimehoshi/ebiten"
 
-type Ball struct {
-	screen *ebiten.Image
-}
+type Ball struct{}
 
-func (b *Ball) Init(screen *ebiten.Image) {
-	b.screen = screen
+func (b *Ball) Init() {
+	// TODO: implement!
 }
 
 func (b *Ball) Update() error {
@@ -15,6 +13,6 @@ func (b *Ball) Update() error {
 	return nil
 }
 
-func (b *Ball) Draw() {
+func (b *Ball) Draw(screen *ebiten.Image) {
 	// TODO: implement!
 }
