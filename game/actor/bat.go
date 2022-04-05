@@ -20,6 +20,10 @@ const (
 	Computer
 )
 
+const (
+	PLAYER_SPEED = 6
+)
+
 type Bat struct {
 	batImage       *ebiten.Image
 	xPos           float64
@@ -52,7 +56,7 @@ func NewBat(playerLocation PlayerLocation, playerType PlayerType) *Bat {
 		yPos:           0,
 		dx:             0,
 		dy:             0,
-		speed:          5,
+		speed:          PLAYER_SPEED,
 		batImage:       _batImage,
 		playerLocation: playerLocation,
 		playerType:     playerType,
@@ -87,6 +91,16 @@ func movePlayer(b *Bat) {
 				b.yPos += b.speed
 			}
 		}
+
+		// make sure we don't cross up/down wall
+		if b.yPos < 0 {
+			b.yPos = 0
+		}
+
+		if b.yPos > 320 {
+			b.yPos = 320
+		}
+
 	} else {
 		// TODO: implement AI!
 	}
