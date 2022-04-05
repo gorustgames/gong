@@ -91,17 +91,16 @@ func movePlayer(b *Bat) {
 				b.yPos += b.speed
 			}
 		}
-
-		// make sure we don't cross up/down wall
-		if b.yPos < 0 {
-			b.yPos = 0
-		}
-
-		if b.yPos > 320 {
-			b.yPos = 320
-		}
-
 	} else {
 		// TODO: implement AI!
+	}
+
+	// make sure we don't cross up/down wall
+	if b.yPos < 0 {
+		b.yPos = 0
+	}
+
+	if b.yPos > 320 {
+		b.yPos = 320
 	}
 }
