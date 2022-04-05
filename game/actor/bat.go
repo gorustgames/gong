@@ -15,10 +15,6 @@ type Bat struct {
 	speed    float64
 }
 
-var (
-	batImage *ebiten.Image
-)
-
 func (b *Bat) Init() {
 	b.xPos = 0
 	b.yPos = 0
