@@ -1,11 +1,24 @@
 package actor
 
-import "github.com/hajimehoshi/ebiten"
+import (
+	"github.com/hajimehoshi/ebiten"
+	"github.com/hajimehoshi/ebiten/ebitenutil"
+	"log"
+)
 
-type Ball struct{}
+type Ball struct {
+	ballImage *ebiten.Image
+}
 
-func (b *Ball) Init() {
-	// TODO: implement!
+func NewBall() *Ball {
+	_ballImage, _, err := ebitenutil.NewImageFromFile("assets/ball.png", ebiten.FilterDefault)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return &Ball{
+		ballImage: _ballImage,
+	}
 }
 
 func (b *Ball) Update() error {

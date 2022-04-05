@@ -5,9 +5,6 @@ import (
 )
 
 type GameActor interface {
-	// Init Actor initialization.
-	Init()
-
 	// Update Responsible for update of actor state.
 	Update() error
 
@@ -19,12 +16,10 @@ type GameActor interface {
 // see https://stackoverflow.com/questions/17077074/array-of-pointers-to-different-struct-implementing-same-interface
 func CreateActors() []GameActor {
 	var batPlayer *Bat
-	batPlayer = new(Bat)
-	batPlayer.Init()
+	batPlayer = NewBat()
 
 	var ball *Ball
-	ball = new(Ball)
-	ball.Init()
+	ball = NewBall()
 
 	return []GameActor{batPlayer, ball}
 }

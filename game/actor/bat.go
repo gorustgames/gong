@@ -15,20 +15,21 @@ type Bat struct {
 	speed    float64
 }
 
-func (b *Bat) Init() {
-	b.xPos = 0
-	b.yPos = 0
-	b.dx = 0
-	b.dy = 0
-	b.speed = 5
+func NewBat() *Bat {
 
-	batImage, _, err := ebitenutil.NewImageFromFile("assets/bat00.png", ebiten.FilterDefault)
+	_batImage, _, err := ebitenutil.NewImageFromFile("assets/bat00.png", ebiten.FilterDefault)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	b.batImage = batImage
-
+	return &Bat{
+		xPos:     -40,
+		yPos:     0,
+		dx:       0,
+		dy:       0,
+		speed:    5,
+		batImage: _batImage,
+	}
 }
 
 func (b *Bat) Update() error {
