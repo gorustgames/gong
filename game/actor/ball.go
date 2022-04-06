@@ -29,13 +29,14 @@ const (
 	BALL_CENTER_Y             = SCREEN_HALF_HEIGHT - 12
 	PAD_JPG_HEIGHT_TOTAL_PX   = 160
 	PAD_JPG_HEIGHT_PADONLY_PX = 128
-	PAD_JPG_PADDING_PX        = (PAD_JPG_HEIGHT_TOTAL_PX - PAD_JPG_HEIGHT_PADONLY_PX) / 2
-	BALL_MAX_Y                = 443
-	BALL_MIN_Y                = 15
-	BALL_MAX_X_BAT            = 734 // max X when bat is in front of the ball
-	BALL_MIN_X_BAT            = 43  // min X when bat is in front of the ball
-	BALL_MAX_X                = BALL_MAX_X_BAT + 27
-	BALL_MIN_X                = BALL_MIN_X_BAT - 28
+	// this represents upper/lower margin between pad picture and whole jpg top/bottom
+	PAD_JPG_PADDING_PX = (PAD_JPG_HEIGHT_TOTAL_PX - PAD_JPG_HEIGHT_PADONLY_PX) / 2
+	BALL_MAX_Y         = 443
+	BALL_MIN_Y         = 15
+	BALL_MAX_X_BAT     = 734 // max X when bat is in front of the ball
+	BALL_MIN_X_BAT     = 43  // min X when bat is in front of the ball
+	BALL_MAX_X         = BALL_MAX_X_BAT + 27
+	BALL_MIN_X         = BALL_MIN_X_BAT - 28
 )
 
 func NewBall(dx float64, telemetry chan<- ActorTelemetry, batsTelemetry <-chan ActorTelemetry) *Ball {
