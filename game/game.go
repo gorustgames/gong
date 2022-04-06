@@ -1,6 +1,7 @@
 package game
 
 import (
+	"fmt"
 	"github.com/gorustgames/gong/game/actor"
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
@@ -17,6 +18,12 @@ const (
 
 var (
 	background *ebiten.Image
+	xLB        float64 // xPos of left bat
+	yLB        float64 // yPos of left bat
+	xRB        float64 // xPos of right bat
+	yRB        float64 // yPos of right bat
+	xB         float64 // xPos of ball
+	yB         float64 // xPos of ball
 )
 
 func init() {
@@ -48,6 +55,19 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		actor.Draw(screen)
 	}
 
+	// debug print of positions of crucial game actors
+	ebitenutil.DebugPrint(
+		screen,
+		fmt.Sprintf("LB: x = %f, y = %f RB: x = %f, y = %f B: x = %f, y = %f",
+			xLB,
+			yLB,
+			xRB,
+			yRB,
+			xB,
+			yB,
+		),
+	)
+
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
@@ -56,8 +76,31 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 	return
 }
 
+func readActorTelemetry(telemetry <-chan actor.ActorTelemetry) {
+	for telemetryItem := range telemetry {
+		switch telemetryItem.ActorType {
+		case actor.LeftBatActor:
+			xLB = telemetryItem.XPos
+			yLB = telemetryItem.YPos
+			break
+		case actor.RightBatActor:
+			xRB = telemetryItem.XPos
+			yRB = telemetryItem.YPos
+			break
+		case actor.BallActor:
+			xB = telemetryItem.XPos
+			yB = telemetryItem.YPos
+			break
+		}
+	}
+}
+
 func CreateGame() *Game {
+
+	actors, telemetry := actor.CreateActors()
+	go readActorTelemetry(telemetry)
+
 	return &Game{
-		actors: actor.CreateActors(),
+		actors: actors,
 	}
 }

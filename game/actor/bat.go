@@ -33,9 +33,10 @@ type Bat struct {
 	speed          float64
 	playerLocation PlayerLocation
 	playerType     PlayerType
+	telemetry      chan<- ActorTelemetry
 }
 
-func NewBat(playerLocation PlayerLocation, playerType PlayerType) *Bat {
+func NewBat(playerLocation PlayerLocation, playerType PlayerType, telemetry chan<- ActorTelemetry) *Bat {
 
 	fileName := "assets/bat00.png"
 	if playerLocation == RightPlayer {
@@ -60,11 +61,25 @@ func NewBat(playerLocation PlayerLocation, playerType PlayerType) *Bat {
 		batImage:       _batImage,
 		playerLocation: playerLocation,
 		playerType:     playerType,
+		telemetry:      telemetry,
 	}
 }
 
 func (b *Bat) Update() error {
 	movePlayer(b)
+
+	actorType := LeftBatActor
+
+	if b.playerLocation == RightPlayer {
+		actorType = RightBatActor
+	}
+
+	b.telemetry <- ActorTelemetry{
+		ActorType: actorType,
+		XPos:      b.xPos,
+		YPos:      b.yPos,
+	}
+
 	return nil
 }
 

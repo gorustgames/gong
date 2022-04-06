@@ -1,7 +1,6 @@
 package actor
 
 import (
-	"fmt"
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
 	"log"
@@ -15,6 +14,7 @@ type Ball struct {
 	dx        float64
 	dy        float64
 	speed     int
+	telemetry chan<- ActorTelemetry
 }
 
 const (
@@ -27,7 +27,7 @@ const (
 	BALL_MIN_X                            = BALL_MIN_X_BAT - 28
 )
 
-func NewBall(dx float64) *Ball {
+func NewBall(dx float64, telemetry chan<- ActorTelemetry) *Ball {
 	_ballImage, _, err := ebitenutil.NewImageFromFile("assets/ball.png", ebiten.FilterDefault)
 	if err != nil {
 		log.Fatal(err)
@@ -40,11 +40,17 @@ func NewBall(dx float64) *Ball {
 		dx:        dx,
 		dy:        0,
 		speed:     5,
+		telemetry: telemetry,
 	}
 }
 
 func (b *Ball) Update() error {
 	moveBallManually(b)
+	b.telemetry <- ActorTelemetry{
+		ActorType: BallActor,
+		XPos:      b.xPos,
+		YPos:      b.yPos,
+	}
 	return nil
 }
 
@@ -52,7 +58,6 @@ func (b *Ball) Draw(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Translate(b.xPos, b.yPos)
 	screen.DrawImage(b.ballImage, op)
-	ebitenutil.DebugPrint(screen, fmt.Sprintf("x = %f, y = %f", b.xPos, b.yPos))
 }
 
 // will be used only for debugging. In real game ball
