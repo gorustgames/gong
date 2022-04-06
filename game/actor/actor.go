@@ -28,7 +28,7 @@ type GameActor interface {
 
 // CreateActors
 // see https://stackoverflow.com/questions/17077074/array-of-pointers-to-different-struct-implementing-same-interface
-func CreateActors() ([]GameActor, <-chan ActorTelemetry, chan<- ActorTelemetry) {
+func CreateActors(gameNotificationBus chan string) ([]GameActor, <-chan ActorTelemetry, chan<- ActorTelemetry) {
 
 	// telemetry sent by actors to game
 	telemetry := make(chan ActorTelemetry)
@@ -39,8 +39,8 @@ func CreateActors() ([]GameActor, <-chan ActorTelemetry, chan<- ActorTelemetry) 
 	batsTelemetry := make(chan ActorTelemetry)
 
 	return []GameActor{
-		NewBat(LeftPlayer, Human, telemetry),
-		NewBat(RightPlayer, Human, telemetry), // TODO: this will be Human or Computer based on game mode(single player, multi player, ai2ai demo)!
-		NewBall(5, telemetry, batsTelemetry),
+		NewBat(LeftPlayer, Human, telemetry, gameNotificationBus),
+		NewBat(RightPlayer, Human, telemetry, gameNotificationBus), // TODO: this will be Human or Computer based on game mode(single player, multi player, ai2ai demo)!
+		NewBall(5, telemetry, batsTelemetry, gameNotificationBus),
 	}, telemetry, batsTelemetry
 }

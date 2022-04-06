@@ -102,7 +102,10 @@ func readActorTelemetry(telemetry <-chan actor.ActorTelemetry) {
 
 func CreateGame() *Game {
 
-	actors, telemetry, _batsTelemetry := actor.CreateActors()
+	// TODO: _batsTelemetry can be propagated via gameNotificationBus as well!
+	gameNotificationBus := make(chan string)
+
+	actors, telemetry, _batsTelemetry := actor.CreateActors(gameNotificationBus)
 	go readActorTelemetry(telemetry)
 
 	batsTelemetry = _batsTelemetry

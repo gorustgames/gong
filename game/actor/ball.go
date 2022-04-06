@@ -1,7 +1,6 @@
 package actor
 
 import (
-	"fmt"
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
 	"log"
@@ -9,17 +8,18 @@ import (
 )
 
 type Ball struct {
-	ballImage *ebiten.Image
-	xPos      float64 // position of ball
-	yPos      float64
-	xPosLB    float64 // position of left bat
-	yPosLB    float64
-	xPosRB    float64 // position of right bat
-	yPosRB    float64
-	dx        float64
-	dy        float64
-	speed     int
-	telemetry chan<- ActorTelemetry
+	ballImage           *ebiten.Image
+	xPos                float64 // position of ball
+	yPos                float64
+	xPosLB              float64 // position of left bat
+	yPosLB              float64
+	xPosRB              float64 // position of right bat
+	yPosRB              float64
+	dx                  float64
+	dy                  float64
+	speed               int
+	telemetry           chan<- ActorTelemetry
+	gameNotificationBus chan string
 }
 
 const (
@@ -39,20 +39,21 @@ const (
 	BALL_MIN_X         = BALL_MIN_X_BAT - 28
 )
 
-func NewBall(dx float64, telemetry chan<- ActorTelemetry, batsTelemetry <-chan ActorTelemetry) *Ball {
+func NewBall(dx float64, telemetry chan<- ActorTelemetry, batsTelemetry <-chan ActorTelemetry, gameNotificationBus chan string) *Ball {
 	_ballImage, _, err := ebitenutil.NewImageFromFile("assets/ball.png", ebiten.FilterDefault)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	newBal := &Ball{
-		ballImage: _ballImage,
-		xPos:      BALL_CENTER_X,
-		yPos:      BALL_CENTER_Y,
-		dx:        dx,
-		dy:        0,
-		speed:     5,
-		telemetry: telemetry,
+		ballImage:           _ballImage,
+		xPos:                BALL_CENTER_X,
+		yPos:                BALL_CENTER_Y,
+		dx:                  dx,
+		dy:                  0,
+		speed:               5,
+		telemetry:           telemetry,
+		gameNotificationBus: gameNotificationBus,
 	}
 
 	go func(telemetry <-chan ActorTelemetry, b *Ball) {
@@ -83,11 +84,11 @@ func (b *Ball) Update() error {
 		YPos:      b.yPos,
 	}
 	if b.hitLeftBat() {
-		fmt.Println("hitLeftBat")
+		b.gameNotificationBus <- "hitLeftBat"
 	}
 
 	if b.hitRightBat() {
-		fmt.Println("hitRightBat")
+		b.gameNotificationBus <- "hitRightBat"
 	}
 	return nil
 }
