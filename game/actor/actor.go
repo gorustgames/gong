@@ -17,7 +17,7 @@ type GameActor interface {
 func CreateActors() []GameActor {
 	return []GameActor{
 		NewBat(LeftPlayer, Human),
-		NewBat(RightPlayer, Computer),
-		NewBall(),
+		NewBat(RightPlayer, Human), // TODO: switch to Computer here!
+		NewBall(0),                 //for now ball will be not moving initially
 	}
 }
