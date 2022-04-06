@@ -17,7 +17,7 @@ type GameActor interface {
 func CreateActors() []GameActor {
 	return []GameActor{
 		NewBat(LeftPlayer, Human),
-		NewBat(RightPlayer, Human), // TODO: switch to Computer here!
-		NewBall(0),                 //for now ball will be not moving initially
+		NewBat(RightPlayer, Human), // TODO: this will be Human or Computer based on game mode(single player, multi player, ai2ai demo)!
+		NewBall(5),
 	}
 }

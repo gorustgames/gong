@@ -20,11 +20,11 @@ type Ball struct {
 const (
 	SCREEN_HALF_WIDTH, SCREEN_HALF_HEIGHT = 400, 240
 	BALL_MAX_Y                            = 443
-	BALL_MIN_Y                            = 25
+	BALL_MIN_Y                            = 15
 	BALL_MAX_X_BAT                        = 734 // max X when bat is in front of the ball
 	BALL_MIN_X_BAT                        = 43  // min X when bat is in front of the ball
-	BALL_MAX_X                            = 734 // TODO: will be less than BALL_MAX_X_BAT
-	BALL_MIN_X                            = 43  // TODO: will be more  than BALL_MIN_X_BAT
+	BALL_MAX_X                            = BALL_MAX_X_BAT + 27
+	BALL_MIN_X                            = BALL_MIN_X_BAT - 28
 )
 
 func NewBall(dx float64) *Ball {
@@ -60,16 +60,16 @@ func (b *Ball) Draw(screen *ebiten.Image) {
 func moveBallManually(b *Ball) {
 
 	if ebiten.IsKeyPressed(ebiten.KeyY) {
-		b.yPos -= float64(b.speed)
+		b.yPos -= 1
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyH) {
-		b.yPos += float64(b.speed)
+		b.yPos += 1
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyJ) {
-		b.xPos += float64(b.speed)
+		b.xPos += 1
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyG) {
-		b.xPos -= float64(b.speed)
+		b.xPos -= 1
 	}
 
 	if b.xPos >= BALL_MAX_X {
