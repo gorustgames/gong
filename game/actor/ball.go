@@ -1,6 +1,7 @@
 package actor
 
 import (
+	"fmt"
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
 	"log"
@@ -23,12 +24,18 @@ type Ball struct {
 
 const (
 	SCREEN_HALF_WIDTH, SCREEN_HALF_HEIGHT = 400, 240
-	BALL_MAX_Y                            = 443
-	BALL_MIN_Y                            = 15
-	BALL_MAX_X_BAT                        = 734 // max X when bat is in front of the ball
-	BALL_MIN_X_BAT                        = 43  // min X when bat is in front of the ball
-	BALL_MAX_X                            = BALL_MAX_X_BAT + 27
-	BALL_MIN_X                            = BALL_MIN_X_BAT - 28
+	// deduct 12 to compensate for ball.png size (12x12 px) & padding
+	BALL_CENTER_X             = SCREEN_HALF_WIDTH - 12
+	BALL_CENTER_Y             = SCREEN_HALF_HEIGHT - 12
+	PAD_JPG_HEIGHT_TOTAL_PX   = 160
+	PAD_JPG_HEIGHT_PADONLY_PX = 128
+	PAD_JPG_PADDING_PX        = (PAD_JPG_HEIGHT_TOTAL_PX - PAD_JPG_HEIGHT_PADONLY_PX) / 2
+	BALL_MAX_Y                = 443
+	BALL_MIN_Y                = 15
+	BALL_MAX_X_BAT            = 734 // max X when bat is in front of the ball
+	BALL_MIN_X_BAT            = 43  // min X when bat is in front of the ball
+	BALL_MAX_X                = BALL_MAX_X_BAT + 27
+	BALL_MIN_X                = BALL_MIN_X_BAT - 28
 )
 
 func NewBall(dx float64, telemetry chan<- ActorTelemetry, batsTelemetry <-chan ActorTelemetry) *Ball {
@@ -39,8 +46,8 @@ func NewBall(dx float64, telemetry chan<- ActorTelemetry, batsTelemetry <-chan A
 
 	newBal := &Ball{
 		ballImage: _ballImage,
-		xPos:      SCREEN_HALF_WIDTH - 12, // deduct 12 to compensate for ball.png size (12x12 px) & padding
-		yPos:      SCREEN_HALF_HEIGHT - 12,
+		xPos:      BALL_CENTER_X,
+		yPos:      BALL_CENTER_Y,
 		dx:        dx,
 		dy:        0,
 		speed:     5,
@@ -56,7 +63,7 @@ func NewBall(dx float64, telemetry chan<- ActorTelemetry, batsTelemetry <-chan A
 				break
 			case RightBatActor:
 				b.xPosRB = telemetryItem.XPos
-				b.xPosRB = telemetryItem.YPos
+				b.yPosRB = telemetryItem.YPos
 				break
 			default:
 				// should never happen
@@ -73,6 +80,13 @@ func (b *Ball) Update() error {
 		ActorType: BallActor,
 		XPos:      b.xPos,
 		YPos:      b.yPos,
+	}
+	if b.hitLeftBat() {
+		fmt.Println("hitLeftBat")
+	}
+
+	if b.hitRightBat() {
+		fmt.Println("hitRightBat")
 	}
 	return nil
 }
@@ -132,4 +146,26 @@ func moveBallAuto(b *Ball) {
 func normalizedDxDy(dx float64, dy float64) (float64, float64) {
 	vecLen := math.Hypot(dx, dy)
 	return dx / vecLen, dy / vecLen
+}
+
+func (b *Ball) hitLeftBat() bool {
+	if b.xPos >= BALL_CENTER_X {
+		return false
+	}
+
+	ballUpperBound := b.yPosLB + PAD_JPG_PADDING_PX
+	ballLowerBound := b.yPosLB + PAD_JPG_PADDING_PX + PAD_JPG_HEIGHT_PADONLY_PX
+
+	return b.yPos >= ballUpperBound && b.yPos <= ballLowerBound && b.xPos <= BALL_MIN_X_BAT
+}
+
+func (b *Ball) hitRightBat() bool {
+	if b.xPos <= BALL_CENTER_X {
+		return false
+	}
+
+	ballUpperBound := b.yPosRB + PAD_JPG_PADDING_PX
+	ballLowerBound := b.yPosRB + PAD_JPG_PADDING_PX + PAD_JPG_HEIGHT_PADONLY_PX
+
+	return b.yPos >= ballUpperBound && b.yPos <= ballLowerBound && b.xPos >= BALL_MAX_X_BAT
 }
