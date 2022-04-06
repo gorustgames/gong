@@ -9,8 +9,12 @@ import (
 
 type Ball struct {
 	ballImage *ebiten.Image
-	xPos      float64
+	xPos      float64 // position of ball
 	yPos      float64
+	xPosLB    float64 // position of left bat
+	yPosLB    float64
+	xPosRB    float64 // position of right bat
+	yPosRB    float64
 	dx        float64
 	dy        float64
 	speed     int
@@ -27,13 +31,13 @@ const (
 	BALL_MIN_X                            = BALL_MIN_X_BAT - 28
 )
 
-func NewBall(dx float64, telemetry chan<- ActorTelemetry) *Ball {
+func NewBall(dx float64, telemetry chan<- ActorTelemetry, batsTelemetry <-chan ActorTelemetry) *Ball {
 	_ballImage, _, err := ebitenutil.NewImageFromFile("assets/ball.png", ebiten.FilterDefault)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	return &Ball{
+	newBal := &Ball{
 		ballImage: _ballImage,
 		xPos:      SCREEN_HALF_WIDTH - 12, // deduct 12 to compensate for ball.png size (12x12 px) & padding
 		yPos:      SCREEN_HALF_HEIGHT - 12,
@@ -42,6 +46,25 @@ func NewBall(dx float64, telemetry chan<- ActorTelemetry) *Ball {
 		speed:     5,
 		telemetry: telemetry,
 	}
+
+	go func(telemetry <-chan ActorTelemetry, b *Ball) {
+		for telemetryItem := range telemetry {
+			switch telemetryItem.ActorType {
+			case LeftBatActor:
+				b.xPosLB = telemetryItem.XPos
+				b.yPosLB = telemetryItem.YPos
+				break
+			case RightBatActor:
+				b.xPosRB = telemetryItem.XPos
+				b.xPosRB = telemetryItem.YPos
+				break
+			default:
+				// should never happen
+			}
+		}
+	}(batsTelemetry, newBal)
+
+	return newBal
 }
 
 func (b *Ball) Update() error {

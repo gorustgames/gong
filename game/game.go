@@ -16,14 +16,16 @@ const (
 	SCREEN_WIDTH, SCREEN_HEIGHT = 800, 480
 )
 
+// TODO: this should be moved into game struct probably (with background exception)!
 var (
-	background *ebiten.Image
-	xLB        float64 // xPos of left bat
-	yLB        float64 // yPos of left bat
-	xRB        float64 // xPos of right bat
-	yRB        float64 // yPos of right bat
-	xB         float64 // xPos of ball
-	yB         float64 // xPos of ball
+	background    *ebiten.Image
+	xLB           float64 // xPos of left bat
+	yLB           float64 // yPos of left bat
+	xRB           float64 // xPos of right bat
+	yRB           float64 // yPos of right bat
+	xB            float64 // xPos of ball
+	yB            float64 // xPos of ball
+	batsTelemetry chan<- actor.ActorTelemetry
 )
 
 func init() {
@@ -82,10 +84,14 @@ func readActorTelemetry(telemetry <-chan actor.ActorTelemetry) {
 		case actor.LeftBatActor:
 			xLB = telemetryItem.XPos
 			yLB = telemetryItem.YPos
+			// forward bat position to ball
+			batsTelemetry <- telemetryItem
 			break
 		case actor.RightBatActor:
 			xRB = telemetryItem.XPos
 			yRB = telemetryItem.YPos
+			// forward bat position to ball
+			batsTelemetry <- telemetryItem
 			break
 		case actor.BallActor:
 			xB = telemetryItem.XPos
@@ -97,8 +103,10 @@ func readActorTelemetry(telemetry <-chan actor.ActorTelemetry) {
 
 func CreateGame() *Game {
 
-	actors, telemetry := actor.CreateActors()
+	actors, telemetry, _batsTelemetry := actor.CreateActors()
 	go readActorTelemetry(telemetry)
+
+	batsTelemetry = _batsTelemetry
 
 	return &Game{
 		actors: actors,
