@@ -16,16 +16,15 @@ const (
 	SCREEN_WIDTH, SCREEN_HEIGHT = 800, 480
 )
 
-// TODO: this should be moved into game struct probably (with background exception)!
 var (
 	background    *ebiten.Image
-	xLB           float64 // xPos of left bat
-	yLB           float64 // yPos of left bat
-	xRB           float64 // xPos of right bat
-	yRB           float64 // yPos of right bat
-	xB            float64 // xPos of ball
-	yB            float64 // xPos of ball
-	batsTelemetry chan<- actor.ActorTelemetry
+	xLB           float64                     // xPos of left bat
+	yLB           float64                     // yPos of left bat
+	xRB           float64                     // xPos of right bat
+	yRB           float64                     // yPos of right bat
+	xB            float64                     // xPos of ball
+	yB            float64                     // xPos of ball
+	batsTelemetry chan<- actor.ActorTelemetry // channel to propagate left & right bat telemetry to ball
 )
 
 func init() {
