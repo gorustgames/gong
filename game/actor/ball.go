@@ -96,6 +96,7 @@ func (b *Ball) Update() error {
 			GameNotificationType: gamebus.LeftBatHitNotification,
 			Data:                 nil,
 		}
+		b.xPos = BALL_MIN_X_BAT
 	}
 
 	if b.hitRightBat() {
@@ -104,6 +105,7 @@ func (b *Ball) Update() error {
 			GameNotificationType: gamebus.RightBatHitNotification,
 			Data:                 nil,
 		}
+		b.xPos = BALL_MAX_X_BAT
 	}
 	return nil
 }
