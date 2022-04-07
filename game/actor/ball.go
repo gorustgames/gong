@@ -66,7 +66,6 @@ func NewBall(dx float64, notificationBus *gamebus.GameNotificationBus) *Ball {
 				}
 				break
 			case gamebus.RightBatActor:
-
 				switch v := notification.Data.(type) {
 				case gamebus.PositionNotificationPayload:
 					b.xPosRB = v.XPos

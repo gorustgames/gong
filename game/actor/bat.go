@@ -78,8 +78,8 @@ func NewBat(playerLocation PlayerLocation, playerType PlayerType, notificationBu
 		showHitCounter:  0,
 	}
 
-	go func(notificationBus *gamebus.GameNotificationBus, b *Bat) {
-		for gameNotification := range notificationBus.Bus {
+	go func(b *Bat) {
+		for gameNotification := range b.notificationBus.Bus {
 			if b.playerLocation == LeftPlayer && gameNotification.GameNotificationType == gamebus.LeftBatHitNotification {
 				b.showHitCounter = 20
 			}
@@ -88,7 +88,7 @@ func NewBat(playerLocation PlayerLocation, playerType PlayerType, notificationBu
 				b.showHitCounter = 20
 			}
 		}
-	}(notificationBus, newBat)
+	}(newBat)
 
 	return newBat
 }
