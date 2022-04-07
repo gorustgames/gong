@@ -108,7 +108,6 @@ func readActorTelemetry(bus *gamebus.GameNotificationBus) {
 
 func CreateGame() *Game {
 
-	// TODO: _batsTelemetry can be propagated via gameNotificationBus as well!
 	notificationBus := gamebus.NewGameNotificationBus()
 
 	actors := actor.CreateActors(notificationBus)
