@@ -1,6 +1,7 @@
 package actor
 
 import (
+	"github.com/gorustgames/gong/gamebus"
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
 	"log"
@@ -25,21 +26,20 @@ const (
 )
 
 type Bat struct {
-	batImage            *ebiten.Image
-	batHitImage         *ebiten.Image
-	xPos                float64
-	yPos                float64
-	dx                  float64
-	dy                  float64
-	speed               float64
-	playerLocation      PlayerLocation
-	playerType          PlayerType
-	telemetry           chan<- ActorTelemetry
-	gameNotificationBus chan string
-	showHitCounter      int
+	batImage        *ebiten.Image
+	batHitImage     *ebiten.Image
+	xPos            float64
+	yPos            float64
+	dx              float64
+	dy              float64
+	speed           float64
+	playerLocation  PlayerLocation
+	playerType      PlayerType
+	notificationBus *gamebus.GameNotificationBus
+	showHitCounter  int
 }
 
-func NewBat(playerLocation PlayerLocation, playerType PlayerType, telemetry chan<- ActorTelemetry, gameNotificationBus chan string) *Bat {
+func NewBat(playerLocation PlayerLocation, playerType PlayerType, notificationBus *gamebus.GameNotificationBus) *Bat {
 
 	fileName := "assets/bat00.png"
 	if playerLocation == RightPlayer {
@@ -65,32 +65,30 @@ func NewBat(playerLocation PlayerLocation, playerType PlayerType, telemetry chan
 	}
 
 	newBat := &Bat{
-		xPos:                _xPos,
-		yPos:                0,
-		dx:                  0,
-		dy:                  0,
-		speed:               PLAYER_SPEED,
-		batImage:            _batImage,
-		batHitImage:         _batHitImage,
-		playerLocation:      playerLocation,
-		playerType:          playerType,
-		telemetry:           telemetry,
-		gameNotificationBus: gameNotificationBus,
-		showHitCounter:      0,
+		xPos:            _xPos,
+		yPos:            0,
+		dx:              0,
+		dy:              0,
+		speed:           PLAYER_SPEED,
+		batImage:        _batImage,
+		batHitImage:     _batHitImage,
+		playerLocation:  playerLocation,
+		playerType:      playerType,
+		notificationBus: notificationBus,
+		showHitCounter:  0,
 	}
 
-	go func(gameNotificationBus chan string, b *Bat) {
-		for gameNotification := range gameNotificationBus {
-			// TODO: use constants instead of literals!
-			if b.playerLocation == LeftPlayer && gameNotification == "hitLeftBat" {
+	go func(notificationBus *gamebus.GameNotificationBus, b *Bat) {
+		for gameNotification := range notificationBus.Bus {
+			if b.playerLocation == LeftPlayer && gameNotification.GameNotificationType == gamebus.LeftBatHitNotification {
 				b.showHitCounter = 20
 			}
 
-			if b.playerLocation == RightPlayer && gameNotification == "hitRightBat" {
+			if b.playerLocation == RightPlayer && gameNotification.GameNotificationType == gamebus.RightBatHitNotification {
 				b.showHitCounter = 20
 			}
 		}
-	}(gameNotificationBus, newBat)
+	}(notificationBus, newBat)
 
 	return newBat
 }
@@ -98,16 +96,19 @@ func NewBat(playerLocation PlayerLocation, playerType PlayerType, telemetry chan
 func (b *Bat) Update() error {
 	movePlayer(b)
 
-	actorType := LeftBatActor
+	gameNotificationActorType := gamebus.LeftBatActor
 
 	if b.playerLocation == RightPlayer {
-		actorType = RightBatActor
+		gameNotificationActorType = gamebus.RightBatActor
 	}
 
-	b.telemetry <- ActorTelemetry{
-		ActorType: actorType,
-		XPos:      b.xPos,
-		YPos:      b.yPos,
+	b.notificationBus.Bus <- gamebus.GameNotification{
+		ActorType:            gameNotificationActorType,
+		GameNotificationType: gamebus.PositionNotification,
+		Data: gamebus.PositionNotificationPayload{
+			XPos: b.xPos,
+			YPos: b.yPos,
+		},
 	}
 
 	if b.showHitCounter > 0 {
@@ -124,6 +125,14 @@ func (b *Bat) Draw(screen *ebiten.Image) {
 		screen.DrawImage(b.batHitImage, op)
 	} else {
 		screen.DrawImage(b.batImage, op)
+	}
+}
+
+func (b *Bat) Id() string {
+	if b.playerLocation == LeftPlayer {
+		return "actor-left-bat"
+	} else {
+		return "actor-right-bat"
 	}
 }
 

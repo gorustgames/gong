@@ -3,13 +3,15 @@ package game
 import (
 	"fmt"
 	"github.com/gorustgames/gong/game/actor"
+	"github.com/gorustgames/gong/gamebus"
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
 	"log"
 )
 
 type Game struct {
-	actors []actor.GameActor
+	actors          []actor.GameActor
+	notificationBus *gamebus.GameNotificationBus
 }
 
 const (
@@ -17,14 +19,13 @@ const (
 )
 
 var (
-	background    *ebiten.Image
-	xLB           float64                     // xPos of left bat
-	yLB           float64                     // yPos of left bat
-	xRB           float64                     // xPos of right bat
-	yRB           float64                     // yPos of right bat
-	xB            float64                     // xPos of ball
-	yB            float64                     // xPos of ball
-	batsTelemetry chan<- actor.ActorTelemetry // channel to propagate left & right bat telemetry to ball
+	background *ebiten.Image
+	xLB        float64 // xPos of left bat
+	yLB        float64 // yPos of left bat
+	xRB        float64 // xPos of right bat
+	yRB        float64 // yPos of right bat
+	xB         float64 // xPos of ball
+	yB         float64 // xPos of ball
 )
 
 func init() {
@@ -77,24 +78,29 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 	return
 }
 
-func readActorTelemetry(telemetry <-chan actor.ActorTelemetry) {
-	for telemetryItem := range telemetry {
-		switch telemetryItem.ActorType {
-		case actor.LeftBatActor:
-			xLB = telemetryItem.XPos
-			yLB = telemetryItem.YPos
-			// forward bat position to ball
-			batsTelemetry <- telemetryItem
+func readActorTelemetry(bus *gamebus.GameNotificationBus) {
+	for notification := range bus.Bus {
+		switch notification.ActorType {
+		case gamebus.LeftBatActor:
+			switch v := notification.Data.(type) {
+			case gamebus.PositionNotificationPayload:
+				xLB = v.XPos
+				yLB = v.YPos
+			}
 			break
-		case actor.RightBatActor:
-			xRB = telemetryItem.XPos
-			yRB = telemetryItem.YPos
-			// forward bat position to ball
-			batsTelemetry <- telemetryItem
+		case gamebus.RightBatActor:
+			switch v := notification.Data.(type) {
+			case gamebus.PositionNotificationPayload:
+				xRB = v.XPos
+				yRB = v.YPos
+			}
 			break
-		case actor.BallActor:
-			xB = telemetryItem.XPos
-			yB = telemetryItem.YPos
+		case gamebus.BallActor:
+			switch v := notification.Data.(type) {
+			case gamebus.PositionNotificationPayload:
+				xB = v.XPos
+				yB = v.YPos
+			}
 			break
 		}
 	}
@@ -103,14 +109,13 @@ func readActorTelemetry(telemetry <-chan actor.ActorTelemetry) {
 func CreateGame() *Game {
 
 	// TODO: _batsTelemetry can be propagated via gameNotificationBus as well!
-	gameNotificationBus := make(chan string)
+	notificationBus := gamebus.NewGameNotificationBus()
 
-	actors, telemetry, _batsTelemetry := actor.CreateActors(gameNotificationBus)
-	go readActorTelemetry(telemetry)
-
-	batsTelemetry = _batsTelemetry
+	actors := actor.CreateActors(notificationBus)
+	go readActorTelemetry(notificationBus)
 
 	return &Game{
-		actors: actors,
+		actors:          actors,
+		notificationBus: notificationBus,
 	}
 }

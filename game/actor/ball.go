@@ -1,6 +1,7 @@
 package actor
 
 import (
+	"github.com/gorustgames/gong/gamebus"
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
 	"log"
@@ -8,18 +9,17 @@ import (
 )
 
 type Ball struct {
-	ballImage           *ebiten.Image
-	xPos                float64 // position of ball
-	yPos                float64
-	xPosLB              float64 // position of left bat
-	yPosLB              float64
-	xPosRB              float64 // position of right bat
-	yPosRB              float64
-	dx                  float64
-	dy                  float64
-	speed               int
-	telemetry           chan<- ActorTelemetry
-	gameNotificationBus chan string
+	ballImage       *ebiten.Image
+	xPos            float64 // position of ball
+	yPos            float64
+	xPosLB          float64 // position of left bat
+	yPosLB          float64
+	xPosRB          float64 // position of right bat
+	yPosRB          float64
+	dx              float64
+	dy              float64
+	speed           int
+	notificationBus *gamebus.GameNotificationBus
 }
 
 const (
@@ -39,56 +39,72 @@ const (
 	BALL_MIN_X         = BALL_MIN_X_BAT - 28
 )
 
-func NewBall(dx float64, telemetry chan<- ActorTelemetry, batsTelemetry <-chan ActorTelemetry, gameNotificationBus chan string) *Ball {
+func NewBall(dx float64, notificationBus *gamebus.GameNotificationBus) *Ball {
 	_ballImage, _, err := ebitenutil.NewImageFromFile("assets/ball.png", ebiten.FilterDefault)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	newBal := &Ball{
-		ballImage:           _ballImage,
-		xPos:                BALL_CENTER_X,
-		yPos:                BALL_CENTER_Y,
-		dx:                  dx,
-		dy:                  0,
-		speed:               5,
-		telemetry:           telemetry,
-		gameNotificationBus: gameNotificationBus,
+		ballImage:       _ballImage,
+		xPos:            BALL_CENTER_X,
+		yPos:            BALL_CENTER_Y,
+		dx:              dx,
+		dy:              0,
+		speed:           5,
+		notificationBus: notificationBus,
 	}
 
-	go func(telemetry <-chan ActorTelemetry, b *Ball) {
-		for telemetryItem := range telemetry {
-			switch telemetryItem.ActorType {
-			case LeftBatActor:
-				b.xPosLB = telemetryItem.XPos
-				b.yPosLB = telemetryItem.YPos
+	go func(b *Ball) {
+		for notification := range b.notificationBus.Bus {
+			switch notification.ActorType {
+			case gamebus.LeftBatActor:
+				switch v := notification.Data.(type) {
+				case gamebus.PositionNotificationPayload:
+					b.xPosLB = v.XPos
+					b.yPosLB = v.YPos
+				}
 				break
-			case RightBatActor:
-				b.xPosRB = telemetryItem.XPos
-				b.yPosRB = telemetryItem.YPos
+			case gamebus.RightBatActor:
+
+				switch v := notification.Data.(type) {
+				case gamebus.PositionNotificationPayload:
+					b.xPosRB = v.XPos
+					b.yPosRB = v.YPos
+				}
 				break
-			default:
-				// should never happen
 			}
 		}
-	}(batsTelemetry, newBal)
+	}(newBal)
 
 	return newBal
 }
 
 func (b *Ball) Update() error {
 	moveBallManually(b)
-	b.telemetry <- ActorTelemetry{
-		ActorType: BallActor,
-		XPos:      b.xPos,
-		YPos:      b.yPos,
+	b.notificationBus.Bus <- gamebus.GameNotification{
+		ActorType:            gamebus.BallActor,
+		GameNotificationType: gamebus.PositionNotification,
+		Data: gamebus.PositionNotificationPayload{
+			XPos: b.xPos,
+			YPos: b.yPos,
+		},
 	}
+
 	if b.hitLeftBat() {
-		b.gameNotificationBus <- "hitLeftBat"
+		b.notificationBus.Bus <- gamebus.GameNotification{
+			ActorType:            gamebus.BallActor,
+			GameNotificationType: gamebus.LeftBatHitNotification,
+			Data:                 nil,
+		}
 	}
 
 	if b.hitRightBat() {
-		b.gameNotificationBus <- "hitRightBat"
+		b.notificationBus.Bus <- gamebus.GameNotification{
+			ActorType:            gamebus.BallActor,
+			GameNotificationType: gamebus.RightBatHitNotification,
+			Data:                 nil,
+		}
 	}
 	return nil
 }
@@ -97,6 +113,10 @@ func (b *Ball) Draw(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Translate(b.xPos, b.yPos)
 	screen.DrawImage(b.ballImage, op)
+}
+
+func (b *Ball) Id() string {
+	return "actor-ball"
 }
 
 // will be used only for debugging. In real game ball
