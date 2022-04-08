@@ -38,7 +38,7 @@ const (
 	BALL_MIN_X_BAT     = 43  // min X when bat is in front of the ball
 	BALL_MAX_X         = BALL_MAX_X_BAT + 27
 	BALL_MIN_X         = BALL_MIN_X_BAT - 28
-	BALL_SPEED         = 1
+	BALL_SPEED         = 5
 )
 
 func NewBall(dx float64, notificationBus *gamebus.GameNotificationBus) *Ball {
@@ -83,7 +83,8 @@ func NewBall(dx float64, notificationBus *gamebus.GameNotificationBus) *Ball {
 
 func (b *Ball) Update() error {
 	// moveBallManually(b)
-	moveBallAuto(b)
+	moveBallSemiAuto(b)
+	//moveBallAuto(b)
 
 	b.notificationBus.Bus <- gamebus.GameNotification{
 		ActorType:            gamebus.BallActor,
@@ -163,44 +164,54 @@ func moveBallAuto(b *Ball) {
 	// Each frame, we move the ball in a series of small steps.
 	// The number of steps being based on its speed attribute.
 	for i := 1; i <= b.speed; i++ {
-		b.xPos += b.dx
-		b.yPos += b.dy
+		moveBallAutoImpl(b)
+	}
+}
 
-		// TODO: for now bounce off but this means new set in real game
-		if b.hitBottom() || b.hitTop() {
-			b.dy = -b.dy
+func moveBallSemiAuto(b *Ball) {
+	if ebiten.IsKeyPressed(ebiten.KeySpace) {
+		moveBallAutoImpl(b)
+	}
+}
+
+func moveBallAutoImpl(b *Ball) {
+	b.xPos += b.dx
+	b.yPos += b.dy
+
+	// TODO: for now bounce off but this means new set in real game
+	if b.hitBottom() || b.hitTop() {
+		b.dy = -b.dy
+	}
+
+	// TODO: for now bounce off but this means new set in real game
+	if b.hitLeft() || b.hitRight() {
+		b.dx = -b.dx
+	}
+
+	if b.hitLeftBat() {
+		b.dx = -b.dx                     // reverse x direction
+		b.dy += b.deflectionForLeftBat() // deflect y direction based on which half of the bat did the ball hit
+		b.notificationBus.Bus <- gamebus.GameNotification{
+			ActorType:            gamebus.BallActor,
+			GameNotificationType: gamebus.LeftBatHitNotification,
+			Data:                 nil,
 		}
-
-		// TODO: for now bounce off but this means new set in real game
-		if b.hitLeft() || b.hitRight() {
-			b.dx = -b.dx
-		}
-
-		if b.hitLeftBat() {
-			b.dx = -b.dx
-			b.dy += b.deflectionForLeftBat()
-			b.notificationBus.Bus <- gamebus.GameNotification{
-				ActorType:            gamebus.BallActor,
-				GameNotificationType: gamebus.LeftBatHitNotification,
-				Data:                 nil,
-			}
-			b.xPos = BALL_MIN_X_BAT
-		}
-
-		if b.hitRightBat() {
-			b.dx = -b.dx
-			b.dy += b.deflectionForRightBat()
-			b.notificationBus.Bus <- gamebus.GameNotification{
-				ActorType:            gamebus.BallActor,
-				GameNotificationType: gamebus.RightBatHitNotification,
-				Data:                 nil,
-			}
-			b.xPos = BALL_MAX_X_BAT
-		}
-
+		b.xPos = BALL_MIN_X_BAT
 		// Ensure our direction vector is a unit vector, i.e. represents a distance
 		// of the equivalent of 1 pixel regardless of its angle.
-		b.dx, b.dy = intoUnitVector(b.dx, b.dy)
+		//b.dx, b.dy = intoUnitVector(b.dx, b.dy)
+	}
+
+	if b.hitRightBat() {
+		b.dx = -b.dx                      // reverse x direction
+		b.dy += b.deflectionForRightBat() // deflect y direction based on which half of the bat did the ball hit
+		b.notificationBus.Bus <- gamebus.GameNotification{
+			ActorType:            gamebus.BallActor,
+			GameNotificationType: gamebus.RightBatHitNotification,
+			Data:                 nil,
+		}
+		b.xPos = BALL_MAX_X_BAT
+		//b.dx, b.dy = intoUnitVector(b.dx, b.dy)
 	}
 }
 
@@ -236,19 +247,25 @@ func (b *Ball) hitRightBat() bool {
 
 // calculates change in dy of left bat is hit based on where we did hit it (upper or lowe part)
 func (b *Ball) deflectionForLeftBat() float64 {
-	diffY := b.yPosLB + PAD_JPG_PADDING_PX - b.yPos // ball padding is small & ignored here
-	if diffY < PAD_JPG_HEIGHT_HALF_PADONLY_PX {
-		diffY = -diffY
-	}
-	deflection := diffY / PAD_JPG_HEIGHT_PADONLY_PX
-	return deflection
+	return calculateDeflection(b.yPos, b.yPosLB)
 }
 
 // calculates change in dy of right bat is hit based on where we did hit it (upper or lowe part)
 func (b *Ball) deflectionForRightBat() float64 {
-	diffY := b.yPosRB + PAD_JPG_PADDING_PX - b.yPos // ball padding is small & ignored here
-	if diffY < PAD_JPG_HEIGHT_HALF_PADONLY_PX {
-		diffY = -diffY
+	return calculateDeflection(b.yPos, b.yPosRB)
+}
+
+func calculateDeflection(ballY float64, batY float64) float64 {
+	diffY := ballY - (batY + PAD_JPG_PADDING_PX) // ball padding is ignored
+
+	if diffY > PAD_JPG_HEIGHT_HALF_PADONLY_PX {
+		// hit in lower part of bat -> positive deflection
+	} else if diffY < PAD_JPG_HEIGHT_HALF_PADONLY_PX {
+		// hit in upper part of bat -> negative deflection
+		diffY = -(diffY)
+	} else {
+		// hit exactly in the middle -> no deflection
+		return 0
 	}
 	deflection := diffY / PAD_JPG_HEIGHT_PADONLY_PX
 	return deflection
