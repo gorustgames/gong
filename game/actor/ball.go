@@ -38,6 +38,7 @@ const (
 	BALL_MIN_X_BAT     = 43  // min X when bat is in front of the ball
 	BALL_MAX_X         = BALL_MAX_X_BAT + 27
 	BALL_MIN_X         = BALL_MIN_X_BAT - 28
+	BALL_SPEED         = 1
 )
 
 func NewBall(dx float64, notificationBus *gamebus.GameNotificationBus) *Ball {
@@ -46,13 +47,13 @@ func NewBall(dx float64, notificationBus *gamebus.GameNotificationBus) *Ball {
 		log.Fatal(err)
 	}
 
-	newBal := &Ball{
+	newBall := &Ball{
 		ballImage:       _ballImage,
 		xPos:            BALL_CENTER_X,
 		yPos:            BALL_CENTER_Y,
 		dx:              dx,
 		dy:              0,
-		speed:           1,
+		speed:           BALL_SPEED,
 		notificationBus: notificationBus,
 	}
 
@@ -75,14 +76,15 @@ func NewBall(dx float64, notificationBus *gamebus.GameNotificationBus) *Ball {
 				break
 			}
 		}
-	}(newBal)
+	}(newBall)
 
-	return newBal
+	return newBall
 }
 
 func (b *Ball) Update() error {
 	// moveBallManually(b)
 	moveBallAuto(b)
+
 	b.notificationBus.Bus <- gamebus.GameNotification{
 		ActorType:            gamebus.BallActor,
 		GameNotificationType: gamebus.PositionNotification,
@@ -92,23 +94,6 @@ func (b *Ball) Update() error {
 		},
 	}
 
-	if b.hitLeftBat() {
-		b.notificationBus.Bus <- gamebus.GameNotification{
-			ActorType:            gamebus.BallActor,
-			GameNotificationType: gamebus.LeftBatHitNotification,
-			Data:                 nil,
-		}
-		b.xPos = BALL_MIN_X_BAT
-	}
-
-	if b.hitRightBat() {
-		b.notificationBus.Bus <- gamebus.GameNotification{
-			ActorType:            gamebus.BallActor,
-			GameNotificationType: gamebus.RightBatHitNotification,
-			Data:                 nil,
-		}
-		b.xPos = BALL_MAX_X_BAT
-	}
 	return nil
 }
 
@@ -154,6 +139,24 @@ func moveBallManually(b *Ball) {
 	if b.yPos <= BALL_MIN_Y {
 		b.yPos = BALL_MIN_Y
 	}
+
+	if b.hitLeftBat() {
+		b.notificationBus.Bus <- gamebus.GameNotification{
+			ActorType:            gamebus.BallActor,
+			GameNotificationType: gamebus.LeftBatHitNotification,
+			Data:                 nil,
+		}
+		b.xPos = BALL_MIN_X_BAT
+	}
+
+	if b.hitRightBat() {
+		b.notificationBus.Bus <- gamebus.GameNotification{
+			ActorType:            gamebus.BallActor,
+			GameNotificationType: gamebus.RightBatHitNotification,
+			Data:                 nil,
+		}
+		b.xPos = BALL_MAX_X_BAT
+	}
 }
 
 func moveBallAuto(b *Ball) {
@@ -163,10 +166,12 @@ func moveBallAuto(b *Ball) {
 		b.xPos += b.dx
 		b.yPos += b.dy
 
+		// TODO: for now bounce off but this means new set in real game
 		if b.hitBottom() || b.hitTop() {
 			b.dy = -b.dy
 		}
 
+		// TODO: for now bounce off but this means new set in real game
 		if b.hitLeft() || b.hitRight() {
 			b.dx = -b.dx
 		}
@@ -174,18 +179,35 @@ func moveBallAuto(b *Ball) {
 		if b.hitLeftBat() {
 			b.dx = -b.dx
 			b.dy += b.deflectionForLeftBat()
+			b.notificationBus.Bus <- gamebus.GameNotification{
+				ActorType:            gamebus.BallActor,
+				GameNotificationType: gamebus.LeftBatHitNotification,
+				Data:                 nil,
+			}
+			b.xPos = BALL_MIN_X_BAT
 		}
 
 		if b.hitRightBat() {
 			b.dx = -b.dx
 			b.dy += b.deflectionForRightBat()
+			b.notificationBus.Bus <- gamebus.GameNotification{
+				ActorType:            gamebus.BallActor,
+				GameNotificationType: gamebus.RightBatHitNotification,
+				Data:                 nil,
+			}
+			b.xPos = BALL_MAX_X_BAT
 		}
+
+		// Ensure our direction vector is a unit vector, i.e. represents a distance
+		// of the equivalent of 1 pixel regardless of its angle.
+		b.dx, b.dy = intoUnitVector(b.dx, b.dy)
 	}
 }
 
 // returns normalized vector (unit vector) with same direction as input vector (expressed as dx, dy)
 // unit vector as same direction as original vector but always has same length (1 unit length)
-func normalizedDxDy(dx float64, dy float64) (float64, float64) {
+// see https://en.wikipedia.org/wiki/Unit_vector
+func intoUnitVector(dx float64, dy float64) (float64, float64) {
 	vecLen := math.Hypot(dx, dy)
 	return dx / vecLen, dy / vecLen
 }
