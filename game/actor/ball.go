@@ -25,10 +25,11 @@ type Ball struct {
 const (
 	SCREEN_HALF_WIDTH, SCREEN_HALF_HEIGHT = 400, 240
 	// deduct 12 to compensate for ball.png size (12x12 px) & padding
-	BALL_CENTER_X             = SCREEN_HALF_WIDTH - 12
-	BALL_CENTER_Y             = SCREEN_HALF_HEIGHT - 12
-	PAD_JPG_HEIGHT_TOTAL_PX   = 160
-	PAD_JPG_HEIGHT_PADONLY_PX = 128
+	BALL_CENTER_X                  = SCREEN_HALF_WIDTH - 12
+	BALL_CENTER_Y                  = SCREEN_HALF_HEIGHT - 12
+	PAD_JPG_HEIGHT_TOTAL_PX        = 160
+	PAD_JPG_HEIGHT_PADONLY_PX      = 128
+	PAD_JPG_HEIGHT_HALF_PADONLY_PX = PAD_JPG_HEIGHT_PADONLY_PX / 2
 	// this represents upper/lower margin between pad picture and whole jpg top/bottom
 	PAD_JPG_PADDING_PX = (PAD_JPG_HEIGHT_TOTAL_PX - PAD_JPG_HEIGHT_PADONLY_PX) / 2
 	BALL_MAX_Y         = 443
@@ -51,7 +52,7 @@ func NewBall(dx float64, notificationBus *gamebus.GameNotificationBus) *Ball {
 		yPos:            BALL_CENTER_Y,
 		dx:              dx,
 		dy:              0,
-		speed:           5,
+		speed:           1,
 		notificationBus: notificationBus,
 	}
 
@@ -80,7 +81,8 @@ func NewBall(dx float64, notificationBus *gamebus.GameNotificationBus) *Ball {
 }
 
 func (b *Ball) Update() error {
-	moveBallManually(b)
+	// moveBallManually(b)
+	moveBallAuto(b)
 	b.notificationBus.Bus <- gamebus.GameNotification{
 		ActorType:            gamebus.BallActor,
 		GameNotificationType: gamebus.PositionNotification,
@@ -158,9 +160,26 @@ func moveBallAuto(b *Ball) {
 	// Each frame, we move the ball in a series of small steps.
 	// The number of steps being based on its speed attribute.
 	for i := 1; i <= b.speed; i++ {
-		//TODO: implement
 		b.xPos += b.dx
 		b.yPos += b.dy
+
+		if b.hitBottom() || b.hitTop() {
+			b.dy = -b.dy
+		}
+
+		if b.hitLeft() || b.hitRight() {
+			b.dx = -b.dx
+		}
+
+		if b.hitLeftBat() {
+			b.dx = -b.dx
+			b.dy += b.deflectionForLeftBat()
+		}
+
+		if b.hitRightBat() {
+			b.dx = -b.dx
+			b.dy += b.deflectionForRightBat()
+		}
 	}
 }
 
@@ -191,4 +210,40 @@ func (b *Ball) hitRightBat() bool {
 	ballLowerBound := b.yPosRB + PAD_JPG_PADDING_PX + PAD_JPG_HEIGHT_PADONLY_PX
 
 	return b.yPos >= ballUpperBound && b.yPos <= ballLowerBound && b.xPos >= BALL_MAX_X_BAT
+}
+
+// calculates change in dy of left bat is hit based on where we did hit it (upper or lowe part)
+func (b *Ball) deflectionForLeftBat() float64 {
+	diffY := b.yPosLB + PAD_JPG_PADDING_PX - b.yPos // ball padding is small & ignored here
+	if diffY < PAD_JPG_HEIGHT_HALF_PADONLY_PX {
+		diffY = -diffY
+	}
+	deflection := diffY / PAD_JPG_HEIGHT_PADONLY_PX
+	return deflection
+}
+
+// calculates change in dy of right bat is hit based on where we did hit it (upper or lowe part)
+func (b *Ball) deflectionForRightBat() float64 {
+	diffY := b.yPosRB + PAD_JPG_PADDING_PX - b.yPos // ball padding is small & ignored here
+	if diffY < PAD_JPG_HEIGHT_HALF_PADONLY_PX {
+		diffY = -diffY
+	}
+	deflection := diffY / PAD_JPG_HEIGHT_PADONLY_PX
+	return deflection
+}
+
+func (b *Ball) hitLeft() bool {
+	return b.xPos <= BALL_MIN_X
+}
+
+func (b *Ball) hitRight() bool {
+	return b.xPos >= BALL_MAX_X
+}
+
+func (b *Ball) hitTop() bool {
+	return b.yPos <= BALL_MIN_Y
+}
+
+func (b *Ball) hitBottom() bool {
+	return b.yPos >= BALL_MAX_Y
 }
