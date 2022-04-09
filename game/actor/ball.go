@@ -1,7 +1,7 @@
 package actor
 
 import (
-	"github.com/gorustgames/gong/gamebus"
+	"github.com/gorustgames/gong/pubsub"
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
 	"log"
@@ -19,7 +19,7 @@ type Ball struct {
 	dx              float64
 	dy              float64
 	speed           int
-	notificationBus *gamebus.GameNotificationBus
+	notificationBus *pubsub.Broker
 }
 
 const (
@@ -41,10 +41,10 @@ const (
 	BALL_MIN_X_BAT     = 43  // min X when bat is in front of the ball
 	BALL_MAX_X         = BALL_MAX_X_BAT + 27
 	BALL_MIN_X         = BALL_MIN_X_BAT - 28
-	BALL_SPEED         = 5
+	BALL_SPEED         = 1
 )
 
-func NewBall(dx float64, notificationBus *gamebus.GameNotificationBus) *Ball {
+func NewBall(dx float64, notificationBus *pubsub.Broker) *Ball {
 	_ballImage, _, err := ebitenutil.NewImageFromFile("assets/ball.png", ebiten.FilterDefault)
 	if err != nil {
 		log.Fatal(err)
@@ -60,43 +60,54 @@ func NewBall(dx float64, notificationBus *gamebus.GameNotificationBus) *Ball {
 		notificationBus: notificationBus,
 	}
 
-	go func(b *Ball) {
-		for notification := range b.notificationBus.Bus {
-			switch notification.ActorType {
-			case gamebus.LeftBatActor:
-				switch v := notification.Data.(type) {
-				case gamebus.PositionNotificationPayload:
-					b.xPosLB = v.XPos
-					b.yPosLB = v.YPos
-				}
-				break
-			case gamebus.RightBatActor:
-				switch v := notification.Data.(type) {
-				case gamebus.PositionNotificationPayload:
-					b.xPosRB = v.XPos
-					b.yPosRB = v.YPos
-				}
-				break
-			}
-		}
-	}(newBall)
+	subscriberPos := notificationBus.AddSubscriber()
 
+	notificationBus.Subscribe(subscriberPos, pubsub.POSITION_NOTIFICATION_TOPIC)
+	go subscriberPos.Listen(newBall.updatePosition)
 	return newBall
 }
 
+func (b *Ball) updatePosition(message *pubsub.Message) {
+	switch message.GetMessageBody().ActorType {
+	case pubsub.LeftBatActor:
+		b.updatePositionOfLeftBat(message)
+		break
+
+	case pubsub.RightBatActor:
+		b.updatePositionOfRightBat(message)
+		break
+	default:
+		break // ignore other actor's positions
+	}
+}
+
+func (b *Ball) updatePositionOfLeftBat(message *pubsub.Message) {
+	switch v := message.GetMessageBody().Data.(type) {
+	case pubsub.PositionNotificationPayload:
+		b.xPosLB = v.XPos
+		b.yPosLB = v.YPos
+	}
+}
+
+func (b *Ball) updatePositionOfRightBat(message *pubsub.Message) {
+	switch v := message.GetMessageBody().Data.(type) {
+	case pubsub.PositionNotificationPayload:
+		b.xPosRB = v.XPos
+		b.yPosRB = v.YPos
+	}
+}
+
 func (b *Ball) Update() error {
-	// moveBallManually(b)
-	moveBallSemiAuto(b)
+	moveBallManually(b)
 	//moveBallAuto(b)
 
-	b.notificationBus.Bus <- gamebus.GameNotification{
-		ActorType:            gamebus.BallActor,
-		GameNotificationType: gamebus.PositionNotification,
-		Data: gamebus.PositionNotificationPayload{
+	b.notificationBus.Publish(pubsub.POSITION_NOTIFICATION_TOPIC, pubsub.GameNotification{
+		ActorType: pubsub.BallActor,
+		Data: pubsub.PositionNotificationPayload{
 			XPos: b.xPos,
 			YPos: b.yPos,
 		},
-	}
+	})
 
 	return nil
 }
@@ -111,58 +122,6 @@ func (b *Ball) Id() string {
 	return "actor-ball"
 }
 
-// will be used only for debugging. In real game ball
-// is moving by laws of physics ;)
-func moveBallManually(b *Ball) {
-
-	if ebiten.IsKeyPressed(ebiten.KeyY) {
-		b.yPos -= 1
-	}
-	if ebiten.IsKeyPressed(ebiten.KeyH) {
-		b.yPos += 1
-	}
-	if ebiten.IsKeyPressed(ebiten.KeyJ) {
-		b.xPos += 1
-	}
-	if ebiten.IsKeyPressed(ebiten.KeyG) {
-		b.xPos -= 1
-	}
-
-	if b.xPos >= BALL_MAX_X {
-		b.xPos = BALL_MAX_X
-	}
-
-	if b.xPos <= BALL_MIN_X {
-		b.xPos = BALL_MIN_X
-	}
-
-	if b.yPos >= BALL_MAX_Y {
-		b.yPos = BALL_MAX_Y
-	}
-
-	if b.yPos <= BALL_MIN_Y {
-		b.yPos = BALL_MIN_Y
-	}
-
-	if b.hitLeftBat() {
-		b.notificationBus.Bus <- gamebus.GameNotification{
-			ActorType:            gamebus.BallActor,
-			GameNotificationType: gamebus.LeftBatHitNotification,
-			Data:                 nil,
-		}
-		b.xPos = BALL_MIN_X_BAT
-	}
-
-	if b.hitRightBat() {
-		b.notificationBus.Bus <- gamebus.GameNotification{
-			ActorType:            gamebus.BallActor,
-			GameNotificationType: gamebus.RightBatHitNotification,
-			Data:                 nil,
-		}
-		b.xPos = BALL_MAX_X_BAT
-	}
-}
-
 func moveBallAuto(b *Ball) {
 	// Each frame, we move the ball in a series of small steps.
 	// The number of steps being based on its speed attribute.
@@ -171,7 +130,7 @@ func moveBallAuto(b *Ball) {
 	}
 }
 
-func moveBallSemiAuto(b *Ball) {
+func moveBallManually(b *Ball) {
 	if ebiten.IsKeyPressed(ebiten.KeySpace) {
 		moveBallAutoImpl(b)
 	}
@@ -194,11 +153,12 @@ func moveBallAutoImpl(b *Ball) {
 	if b.hitLeftBat() {
 		b.dx = -b.dx                     // reverse x direction
 		b.dy += b.deflectionForLeftBat() // deflect y direction based on which half of the bat did the ball hit
-		b.notificationBus.Bus <- gamebus.GameNotification{
-			ActorType:            gamebus.BallActor,
-			GameNotificationType: gamebus.LeftBatHitNotification,
-			Data:                 nil,
-		}
+
+		b.notificationBus.Publish(pubsub.LEFT_BAT_HIT_NOTIFICATION_TOPIC, pubsub.GameNotification{
+			ActorType: pubsub.BallActor,
+			Data:      nil,
+		})
+
 		b.xPos = BALL_MIN_X_BAT
 		// Ensure our direction vector is a unit vector, i.e. represents a distance
 		// of the equivalent of 1 pixel regardless of its angle.
@@ -208,11 +168,12 @@ func moveBallAutoImpl(b *Ball) {
 	if b.hitRightBat() {
 		b.dx = -b.dx                      // reverse x direction
 		b.dy += b.deflectionForRightBat() // deflect y direction based on which half of the bat did the ball hit
-		b.notificationBus.Bus <- gamebus.GameNotification{
-			ActorType:            gamebus.BallActor,
-			GameNotificationType: gamebus.RightBatHitNotification,
-			Data:                 nil,
-		}
+
+		b.notificationBus.Publish(pubsub.RIGHT_BAT_HIT_NOTIFICATION_TOPIC, pubsub.GameNotification{
+			ActorType: pubsub.BallActor,
+			Data:      nil,
+		})
+
 		b.xPos = BALL_MAX_X_BAT
 		//b.dx, b.dy = intoUnitVector(b.dx, b.dy)
 	}

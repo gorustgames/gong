@@ -1,7 +1,7 @@
 package actor
 
 import (
-	"github.com/gorustgames/gong/gamebus"
+	"github.com/gorustgames/gong/pubsub"
 	"github.com/hajimehoshi/ebiten"
 )
 
@@ -18,7 +18,7 @@ type GameActor interface {
 
 // CreateActors
 // see https://stackoverflow.com/questions/17077074/array-of-pointers-to-different-struct-implementing-same-interface
-func CreateActors(notificationBus *gamebus.GameNotificationBus) []GameActor {
+func CreateActors(notificationBus *pubsub.Broker) []GameActor {
 
 	return []GameActor{
 		NewBat(LeftPlayer, Human, notificationBus),

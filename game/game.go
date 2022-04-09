@@ -3,15 +3,14 @@ package game
 import (
 	"fmt"
 	"github.com/gorustgames/gong/game/actor"
-	"github.com/gorustgames/gong/gamebus"
+	"github.com/gorustgames/gong/pubsub"
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
 	"log"
 )
 
 type Game struct {
-	actors          []actor.GameActor
-	notificationBus *gamebus.GameNotificationBus
+	actors []actor.GameActor
 }
 
 const (
@@ -78,43 +77,54 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 	return
 }
 
-func readActorTelemetry(bus *gamebus.GameNotificationBus) {
-	for notification := range bus.Bus {
-		switch notification.ActorType {
-		case gamebus.LeftBatActor:
-			switch v := notification.Data.(type) {
-			case gamebus.PositionNotificationPayload:
-				xLB = v.XPos
-				yLB = v.YPos
-			}
-			break
-		case gamebus.RightBatActor:
-			switch v := notification.Data.(type) {
-			case gamebus.PositionNotificationPayload:
-				xRB = v.XPos
-				yRB = v.YPos
-			}
-			break
-		case gamebus.BallActor:
-			switch v := notification.Data.(type) {
-			case gamebus.PositionNotificationPayload:
-				xB = v.XPos
-				yB = v.YPos
-			}
-			break
-		}
+func updatePosition(message *pubsub.Message) {
+	switch message.GetMessageBody().ActorType {
+	case pubsub.LeftBatActor:
+		updatePositionOfLeftBat(message)
+		break
+	case pubsub.RightBatActor:
+		updatePositionOfRightBat(message)
+		break
+	case pubsub.BallActor:
+		updatePositionOfBall(message)
+		break
+	}
+}
+
+func updatePositionOfLeftBat(message *pubsub.Message) {
+	switch v := message.GetMessageBody().Data.(type) {
+	case pubsub.PositionNotificationPayload:
+		xLB = v.XPos
+		yLB = v.YPos
+	}
+}
+
+func updatePositionOfRightBat(message *pubsub.Message) {
+	switch v := message.GetMessageBody().Data.(type) {
+	case pubsub.PositionNotificationPayload:
+		xRB = v.XPos
+		yRB = v.YPos
+	}
+}
+
+func updatePositionOfBall(message *pubsub.Message) {
+	switch v := message.GetMessageBody().Data.(type) {
+	case pubsub.PositionNotificationPayload:
+		xB = v.XPos
+		yB = v.YPos
 	}
 }
 
 func CreateGame() *Game {
 
-	notificationBus := gamebus.NewGameNotificationBus()
-
+	notificationBus := pubsub.NewBroker()
 	actors := actor.CreateActors(notificationBus)
-	go readActorTelemetry(notificationBus)
+
+	subscriberPos := notificationBus.AddSubscriber()
+	notificationBus.Subscribe(subscriberPos, pubsub.POSITION_NOTIFICATION_TOPIC)
+	go subscriberPos.Listen(updatePosition)
 
 	return &Game{
-		actors:          actors,
-		notificationBus: notificationBus,
+		actors: actors,
 	}
 }

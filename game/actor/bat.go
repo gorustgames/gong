@@ -1,7 +1,7 @@
 package actor
 
 import (
-	"github.com/gorustgames/gong/gamebus"
+	"github.com/gorustgames/gong/pubsub"
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
 	"log"
@@ -35,11 +35,11 @@ type Bat struct {
 	speed           float64
 	playerLocation  PlayerLocation
 	playerType      PlayerType
-	notificationBus *gamebus.GameNotificationBus
+	notificationBus *pubsub.Broker
 	showHitCounter  int
 }
 
-func NewBat(playerLocation PlayerLocation, playerType PlayerType, notificationBus *gamebus.GameNotificationBus) *Bat {
+func NewBat(playerLocation PlayerLocation, playerType PlayerType, notificationBus *pubsub.Broker) *Bat {
 
 	fileName := "assets/bat00.png"
 	if playerLocation == RightPlayer {
@@ -78,38 +78,39 @@ func NewBat(playerLocation PlayerLocation, playerType PlayerType, notificationBu
 		showHitCounter:  0,
 	}
 
-	go func(b *Bat) {
-		for gameNotification := range b.notificationBus.Bus {
-			if b.playerLocation == LeftPlayer && gameNotification.GameNotificationType == gamebus.LeftBatHitNotification {
-				b.showHitCounter = 20
-			}
+	subscriberBatHit := notificationBus.AddSubscriber()
 
-			if b.playerLocation == RightPlayer && gameNotification.GameNotificationType == gamebus.RightBatHitNotification {
-				b.showHitCounter = 20
-			}
-		}
-	}(newBat)
+	if playerLocation == LeftPlayer {
+		notificationBus.Subscribe(subscriberBatHit, pubsub.LEFT_BAT_HIT_NOTIFICATION_TOPIC)
+	} else {
+		notificationBus.Subscribe(subscriberBatHit, pubsub.RIGHT_BAT_HIT_NOTIFICATION_TOPIC)
+	}
+
+	go subscriberBatHit.Listen(newBat.initHitCounter)
 
 	return newBat
+}
+
+func (b *Bat) initHitCounter(_ *pubsub.Message) {
+	b.showHitCounter = 20
 }
 
 func (b *Bat) Update() error {
 	movePlayer(b)
 
-	gameNotificationActorType := gamebus.LeftBatActor
+	gameNotificationActorType := pubsub.LeftBatActor
 
 	if b.playerLocation == RightPlayer {
-		gameNotificationActorType = gamebus.RightBatActor
+		gameNotificationActorType = pubsub.RightBatActor
 	}
 
-	b.notificationBus.Bus <- gamebus.GameNotification{
-		ActorType:            gameNotificationActorType,
-		GameNotificationType: gamebus.PositionNotification,
-		Data: gamebus.PositionNotificationPayload{
+	b.notificationBus.Publish(pubsub.POSITION_NOTIFICATION_TOPIC, pubsub.GameNotification{
+		ActorType: gameNotificationActorType,
+		Data: pubsub.PositionNotificationPayload{
 			XPos: b.xPos,
 			YPos: b.yPos,
 		},
-	}
+	})
 
 	if b.showHitCounter > 0 {
 		b.showHitCounter -= 1
