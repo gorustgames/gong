@@ -2,12 +2,12 @@ package actor
 
 import (
 	"github.com/stretchr/testify/assert"
+	"math"
 	"testing"
 )
 
 func TestCalculateDeflection(t *testing.T) {
 	t.Parallel()
-	var def float64
 
 	/*
 			bat JPG:
@@ -28,15 +28,30 @@ func TestCalculateDeflection(t *testing.T) {
 
 	*/
 
-	// bat hit in upper part (7 pixels from bat) ->  negative deflection
-	def = calculateDeflection(0+16+64-1, 0)
-	assert.Equal(t, def < 0, true)
+	// y(ball) position of ball vertically aligned to exact middle of the bat with y(bat)=0
+	ballInTheMiddleOfBatY := 0.0 + 16 + 64 - 12
 
-	// bat hit in lower part (1 pixel below half of the bat) ->  positive deflection
-	def = calculateDeflection(0+16+64+1, 0)
-	assert.Equal(t, def > 0, true)
+	// ball hits exactly in the middle ->  zero deflection
+	def5 := calculateDeflection(ballInTheMiddleOfBatY, 0)
+	assert.Equal(t, def5, 0.0)
 
-	// bat hit exactly in the middle ->  zero deflection
-	def = calculateDeflection(0+16+64, 0)
-	assert.Equal(t, def, 0)
+	// ball hits above the middle ->  negative deflection
+	def1 := calculateDeflection(ballInTheMiddleOfBatY-1, 0)
+	def2 := calculateDeflection(ballInTheMiddleOfBatY-2, 0)
+	assert.Equal(t, def1 < 0, true)
+	assert.Equal(t, def2 < 0, true)
+	// the more from the middle ball hits the smaller deflection
+	assert.Equal(t, def2 < def1, true)
+
+	// ball hits below the middle ->  positive deflection
+	def3 := calculateDeflection(ballInTheMiddleOfBatY+1, 0)
+	def4 := calculateDeflection(ballInTheMiddleOfBatY+2, 0)
+	assert.Equal(t, def3 > 0, true)
+	assert.Equal(t, def4 > 0, true)
+	// the more from the middle ball hits the bigger deflection
+	assert.Equal(t, def3 < def4, true)
+
+	// deflections for hits in the same distance below and above the bat middle are symmetric
+	assert.Equal(t, math.Abs(def1) == math.Abs(def3), true)
+	assert.Equal(t, math.Abs(def2) == math.Abs(def4), true)
 }

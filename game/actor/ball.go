@@ -24,9 +24,12 @@ type Ball struct {
 
 const (
 	SCREEN_HALF_WIDTH, SCREEN_HALF_HEIGHT = 400, 240
-	// deduct 12 to compensate for ball.png size (12x12 px) & padding
-	BALL_CENTER_X                  = SCREEN_HALF_WIDTH - 12
-	BALL_CENTER_Y                  = SCREEN_HALF_HEIGHT - 12
+
+	BALL_JPG_HEIGHT_TOTAL_PX = 24
+
+	// deduct 12 to compensate for ball.png size (24x24 px) & padding
+	BALL_CENTER_X                  = SCREEN_HALF_WIDTH - BALL_JPG_HEIGHT_TOTAL_PX/2
+	BALL_CENTER_Y                  = SCREEN_HALF_HEIGHT - BALL_JPG_HEIGHT_TOTAL_PX/2
 	PAD_JPG_HEIGHT_TOTAL_PX        = 160
 	PAD_JPG_HEIGHT_PADONLY_PX      = 128
 	PAD_JPG_HEIGHT_HALF_PADONLY_PX = PAD_JPG_HEIGHT_PADONLY_PX / 2
@@ -256,17 +259,12 @@ func (b *Ball) deflectionForRightBat() float64 {
 }
 
 func calculateDeflection(ballY float64, batY float64) float64 {
-	diffY := ballY - (batY + PAD_JPG_PADDING_PX) // ball padding is ignored
 
-	if diffY > PAD_JPG_HEIGHT_HALF_PADONLY_PX {
-		// hit in lower part of bat -> positive deflection
-	} else if diffY < PAD_JPG_HEIGHT_HALF_PADONLY_PX {
-		// hit in upper part of bat -> negative deflection
-		diffY = -(diffY)
-	} else {
-		// hit exactly in the middle -> no deflection
-		return 0
-	}
+	batCenterY := batY + 16 + PAD_JPG_HEIGHT_HALF_PADONLY_PX
+	ballCenterY := ballY + BALL_JPG_HEIGHT_TOTAL_PX/2
+
+	diffY := ballCenterY - batCenterY
+
 	deflection := diffY / PAD_JPG_HEIGHT_PADONLY_PX
 	return deflection
 }
