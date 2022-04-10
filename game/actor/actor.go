@@ -21,6 +21,7 @@ type GameActor interface {
 func CreateActors(notificationBus *pubsub.Broker) []GameActor {
 
 	return []GameActor{
+		NewGameBoard(notificationBus),
 		NewBat(LeftPlayer, Human, notificationBus),
 		NewBat(RightPlayer, Computer, notificationBus), // TODO: this will be Human or Computer based on game mode(single player, multi player, ai2ai demo)!
 		NewBall(1, notificationBus),
