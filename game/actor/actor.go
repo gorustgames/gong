@@ -16,14 +16,35 @@ type GameActor interface {
 	Id() string
 }
 
-// CreateActors
+// CreateActorsSinglePlayer
 // see https://stackoverflow.com/questions/17077074/array-of-pointers-to-different-struct-implementing-same-interface
-func CreateActors(notificationBus *pubsub.Broker) []GameActor {
+func CreateActorsSinglePlayer(notificationBus *pubsub.Broker) []GameActor {
 
 	return []GameActor{
 		NewGameBoard(notificationBus),
 		NewBat(LeftPlayer, Human, notificationBus),
-		NewBat(RightPlayer, Computer, notificationBus), // TODO: this will be Human or Computer based on game mode(single player, multi player, ai2ai demo)!
+		NewBat(RightPlayer, Computer, notificationBus),
 		NewBall(1, notificationBus),
 	}
+}
+
+func CreateActorsMultiPlayer(notificationBus *pubsub.Broker) []GameActor {
+
+	return []GameActor{
+		NewGameBoard(notificationBus),
+		NewBat(LeftPlayer, Human, notificationBus),
+		NewBat(RightPlayer, Human, notificationBus),
+		NewBall(1, notificationBus),
+	}
+}
+
+func CreateActorsMenu(notificationBus *pubsub.Broker) []GameActor {
+	return []GameActor{
+		NewMenu(notificationBus),
+	}
+}
+
+func CreateActorsGameOver(notificationBus *pubsub.Broker) []GameActor {
+	var empty []GameActor
+	return empty
 }
