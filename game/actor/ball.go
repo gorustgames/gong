@@ -229,6 +229,11 @@ func calculateDeflection(ballY float64, batY float64) float64 {
 	diffY := ballCenterY - batCenterY
 
 	deflection := diffY / PAD_JPG_HEIGHT_PADONLY_PX
+
+	// Limit the deflection so we don't get into a situation
+	// where the ball is bouncing up and down too rapidly.
+	deflection = math.Min(math.Max(deflection, -1), 1)
+
 	return deflection
 }
 
