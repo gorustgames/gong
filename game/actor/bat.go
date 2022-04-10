@@ -5,6 +5,8 @@ import (
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
 	"log"
+	"math"
+	"math/rand"
 )
 
 type PlayerLocation int8
@@ -23,6 +25,9 @@ const (
 
 const (
 	PLAYER_SPEED = 6
+	MAX_AI_SPEED = 6
+	HALF_WIDTH   = 400   //SCREEN_WIDTH / 2
+	TARGET_BAT_Y = 168.0 //y pos when bat is ~ in the middle of the playing area
 )
 
 type Bat struct {
@@ -32,6 +37,9 @@ type Bat struct {
 	yPos            float64
 	dx              float64
 	dy              float64
+	xPosBall        float64
+	yPosBall        float64
+	aiOffset        float64
 	speed           float64
 	playerLocation  PlayerLocation
 	playerType      PlayerType
@@ -69,6 +77,9 @@ func NewBat(playerLocation PlayerLocation, playerType PlayerType, notificationBu
 		yPos:            0,
 		dx:              0,
 		dy:              0,
+		xPosBall:        0,
+		yPosBall:        0,
+		aiOffset:        0,
 		speed:           PLAYER_SPEED,
 		batImage:        _batImage,
 		batHitImage:     _batHitImage,
@@ -79,20 +90,34 @@ func NewBat(playerLocation PlayerLocation, playerType PlayerType, notificationBu
 	}
 
 	subscriberBatHit := notificationBus.AddSubscriber()
-
 	if playerLocation == LeftPlayer {
 		notificationBus.Subscribe(subscriberBatHit, pubsub.LEFT_BAT_HIT_NOTIFICATION_TOPIC)
 	} else {
 		notificationBus.Subscribe(subscriberBatHit, pubsub.RIGHT_BAT_HIT_NOTIFICATION_TOPIC)
 	}
-
 	go subscriberBatHit.Listen(newBat.initHitCounter)
+
+	subscriberBallPos := notificationBus.AddSubscriber()
+	notificationBus.Subscribe(subscriberBallPos, pubsub.POSITION_NOTIFICATION_TOPIC)
+	go subscriberBallPos.Listen(newBat.updateBallPosition)
 
 	return newBat
 }
 
 func (b *Bat) initHitCounter(_ *pubsub.Message) {
 	b.showHitCounter = 20
+	b.aiOffset = randInRange(-10, 10)
+}
+
+func (b *Bat) updateBallPosition(message *pubsub.Message) {
+	switch message.GetMessageBody().ActorType {
+	case pubsub.BallActor:
+		switch v := message.GetMessageBody().Data.(type) {
+		case pubsub.PositionNotificationPayload:
+			b.xPosBall = v.XPos
+			b.yPosBall = v.YPos
+		}
+	}
 }
 
 func (b *Bat) Update() error {
@@ -137,6 +162,10 @@ func (b *Bat) Id() string {
 	}
 }
 
+func randInRange(min int, max int) float64 {
+	return float64(rand.Intn(max-min) + min)
+}
+
 func movePlayer(b *Bat) {
 	if b.playerType == Human {
 		if b.playerLocation == LeftPlayer {
@@ -154,8 +183,8 @@ func movePlayer(b *Bat) {
 				b.yPos += b.speed
 			}
 		}
-	} else {
-		// TODO: implement AI!
+	} else /* AI */ {
+		b.yPos += aiDy(b.xPosBall, b.yPosBall, b.xPos, b.yPos, b.aiOffset)
 	}
 
 	// make sure we don't cross up/down wall
@@ -166,4 +195,33 @@ func movePlayer(b *Bat) {
 	if b.yPos > 320 {
 		b.yPos = 320
 	}
+}
+
+func aiDy(xPosBall float64, yPosBall float64, xPos float64, yPos float64, aiOffset float64) float64 {
+	xDistance := xPos - xPosBall
+
+	// If the ball is far away, we move towards the centre of the screen (HALF_HEIGHT), on the basis that we don't
+	// yet know whether the ball will be in the top or bottom half of the screen when it reaches our position on
+	// the X axis. By waiting at a central position, we're as ready as it's possible to be for all eventualities.
+	targetY1 := TARGET_BAT_Y
+	// deduct 16(upper margin) + 64 (half of the bat width), since we use top base Y, not middle based Y
+	// also deduct number offset to make computer more human like aka error-prone
+	targetY2 := yPosBall + float64(aiOffset) - 16 - 64
+
+	/*
+		The final step is to work out the actual Y position we want to move towards. We use what's called a weighted
+		average - taking the average of the two target Y positions we've previously calculated, but shifting the
+		balance towards one or the other depending on how far away the ball is. If the ball is more than 400 pixels
+		(half the screen width) away on the X axis, our target will be half the screen height (target_y_1). If the
+		ball is at the same position as us on the X axis, our target will be target_y_2. If it's 200 pixels away,
+		we'll aim for halfway between target_y_1 and target_y_2. This reflects the idea that as the ball gets closer,
+		we have a better idea of where it's going to end up.
+	*/
+	weight1 := math.Min(1, xDistance/HALF_WIDTH)
+	weight2 := 1 - weight1
+	targetY := (weight1 * targetY1) + (weight2 * targetY2)
+
+	// make sure we do not move faster than allowed (MAX_AI_SPEED) regardless of the direction we are moving to.
+	targetDy := math.Min(MAX_AI_SPEED, math.Max(-MAX_AI_SPEED, targetY-yPos))
+	return targetDy
 }
