@@ -23,6 +23,6 @@ func CreateActors(notificationBus *pubsub.Broker) []GameActor {
 	return []GameActor{
 		NewBat(LeftPlayer, Human, notificationBus),
 		NewBat(RightPlayer, Computer, notificationBus), // TODO: this will be Human or Computer based on game mode(single player, multi player, ai2ai demo)!
-		NewBall(5, notificationBus),
+		NewBall(1, notificationBus),
 	}
 }

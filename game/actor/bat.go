@@ -104,22 +104,6 @@ func NewBat(playerLocation PlayerLocation, playerType PlayerType, notificationBu
 	return newBat
 }
 
-func (b *Bat) initHitCounter(_ *pubsub.Message) {
-	b.showHitCounter = 20
-	b.aiOffset = randInRange(-10, 10)
-}
-
-func (b *Bat) updateBallPosition(message *pubsub.Message) {
-	switch message.GetMessageBody().ActorType {
-	case pubsub.BallActor:
-		switch v := message.GetMessageBody().Data.(type) {
-		case pubsub.PositionNotificationPayload:
-			b.xPosBall = v.XPos
-			b.yPosBall = v.YPos
-		}
-	}
-}
-
 func (b *Bat) Update() error {
 	movePlayer(b)
 
@@ -159,6 +143,22 @@ func (b *Bat) Id() string {
 		return "actor-left-bat"
 	} else {
 		return "actor-right-bat"
+	}
+}
+
+func (b *Bat) initHitCounter(_ *pubsub.Message) {
+	b.showHitCounter = 20
+	b.aiOffset = randInRange(-10, 10)
+}
+
+func (b *Bat) updateBallPosition(message *pubsub.Message) {
+	switch message.GetMessageBody().ActorType {
+	case pubsub.BallActor:
+		switch v := message.GetMessageBody().Data.(type) {
+		case pubsub.PositionNotificationPayload:
+			b.xPosBall = v.XPos
+			b.yPosBall = v.YPos
+		}
 	}
 }
 

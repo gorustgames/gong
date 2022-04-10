@@ -41,7 +41,7 @@ const (
 	BALL_MIN_X_BAT     = 43  // min X when bat is in front of the ball
 	BALL_MAX_X         = BALL_MAX_X_BAT + 27
 	BALL_MIN_X         = BALL_MIN_X_BAT - 28
-	BALL_SPEED         = 1
+	BALL_SPEED         = 5
 )
 
 func NewBall(dx float64, notificationBus *pubsub.Broker) *Ball {
@@ -65,6 +65,31 @@ func NewBall(dx float64, notificationBus *pubsub.Broker) *Ball {
 	notificationBus.Subscribe(subscriberPos, pubsub.POSITION_NOTIFICATION_TOPIC)
 	go subscriberPos.Listen(newBall.updatePosition)
 	return newBall
+}
+
+func (b *Ball) Update() error {
+	// moveBallManually(b)
+	moveBallAuto(b)
+
+	b.notificationBus.Publish(pubsub.POSITION_NOTIFICATION_TOPIC, pubsub.GameNotification{
+		ActorType: pubsub.BallActor,
+		Data: pubsub.PositionNotificationPayload{
+			XPos: b.xPos,
+			YPos: b.yPos,
+		},
+	})
+
+	return nil
+}
+
+func (b *Ball) Draw(screen *ebiten.Image) {
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Translate(b.xPos, b.yPos)
+	screen.DrawImage(b.ballImage, op)
+}
+
+func (b *Ball) Id() string {
+	return "actor-ball"
 }
 
 func (b *Ball) updatePosition(message *pubsub.Message) {
@@ -95,31 +120,6 @@ func (b *Ball) updatePositionOfRightBat(message *pubsub.Message) {
 		b.xPosRB = v.XPos
 		b.yPosRB = v.YPos
 	}
-}
-
-func (b *Ball) Update() error {
-	moveBallManually(b)
-	//moveBallAuto(b)
-
-	b.notificationBus.Publish(pubsub.POSITION_NOTIFICATION_TOPIC, pubsub.GameNotification{
-		ActorType: pubsub.BallActor,
-		Data: pubsub.PositionNotificationPayload{
-			XPos: b.xPos,
-			YPos: b.yPos,
-		},
-	})
-
-	return nil
-}
-
-func (b *Ball) Draw(screen *ebiten.Image) {
-	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(b.xPos, b.yPos)
-	screen.DrawImage(b.ballImage, op)
-}
-
-func (b *Ball) Id() string {
-	return "actor-ball"
 }
 
 func moveBallAuto(b *Ball) {
@@ -163,6 +163,7 @@ func moveBallAutoImpl(b *Ball) {
 		// Ensure our direction vector is a unit vector, i.e. represents a distance
 		// of the equivalent of 1 pixel regardless of its angle.
 		//b.dx, b.dy = intoUnitVector(b.dx, b.dy)
+		b.speed += 1
 	}
 
 	if b.hitRightBat() {
@@ -176,6 +177,7 @@ func moveBallAutoImpl(b *Ball) {
 
 		b.xPos = BALL_MAX_X_BAT
 		//b.dx, b.dy = intoUnitVector(b.dx, b.dy)
+		b.speed += 1
 	}
 }
 
