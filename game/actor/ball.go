@@ -162,7 +162,7 @@ func moveBallAutoImpl(b *Ball) {
 		b.xPos = BALL_MIN_X_BAT
 		// Ensure our direction vector is a unit vector, i.e. represents a distance
 		// of the equivalent of 1 pixel regardless of its angle.
-		//b.dx, b.dy = intoUnitVector(b.dx, b.dy)
+		b.dx, b.dy = intoUnitVector(b.dx, b.dy)
 		b.speed += 1
 	}
 
@@ -176,7 +176,7 @@ func moveBallAutoImpl(b *Ball) {
 		})
 
 		b.xPos = BALL_MAX_X_BAT
-		//b.dx, b.dy = intoUnitVector(b.dx, b.dy)
+		b.dx, b.dy = intoUnitVector(b.dx, b.dy)
 		b.speed += 1
 	}
 }
