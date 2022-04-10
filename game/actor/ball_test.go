@@ -14,17 +14,17 @@ func TestCalculateDeflection(t *testing.T) {
 			-16 pixel margins up & down
 		    -128 pixels bat itself, i.e. 64px(upper part) + 64 px(lower part)
 
-				---
-				 |			16 px
-				---
-			    | |
-				| |
-				|-|			64 px
-				| |
-				| |
-				---			128 px
-				 |
-				---			160 px
+			-----------
+			|	 |	  |		16 px
+			|	---   |
+			|	| |   |
+			|	| |   |
+			|	|-|	  |		64 px
+			|	| |   |
+			|	| |   |
+			|	---	  |		128 px
+			|	 |    |
+			|-------- |		160 px
 
 	*/
 
