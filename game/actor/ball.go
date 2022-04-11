@@ -1,27 +1,33 @@
 package actor
 
 import (
+	"github.com/gorustgames/gong/game/util"
 	"github.com/gorustgames/gong/pubsub"
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
+	"github.com/hajimehoshi/ebiten/v2/audio"
 	"log"
 	"math"
 )
 
 type Ball struct {
-	base            GameActorBase
-	ballImage       *ebiten.Image
-	xPos            float64 // position of ball
-	yPos            float64
-	xPosLB          float64 // position of left bat
-	yPosLB          float64
-	xPosRB          float64 // position of right bat
-	yPosRB          float64
-	dx              float64
-	dy              float64
-	speed           int
-	notificationBus *pubsub.Broker
-	subscribers     []*pubsub.Subscriber
+	base                   GameActorBase
+	ballImage              *ebiten.Image
+	xPos                   float64 // position of ball
+	yPos                   float64
+	xPosLB                 float64 // position of left bat
+	yPosLB                 float64
+	xPosRB                 float64 // position of right bat
+	yPosRB                 float64
+	dx                     float64
+	dy                     float64
+	speed                  int
+	notificationBus        *pubsub.Broker
+	subscribers            []*pubsub.Subscriber
+	audioPlayerHitSlow     *audio.Player
+	audioPlayerHitMedium   *audio.Player
+	audioPlayerHitFast     *audio.Player
+	audioPlayerHitVeryFast *audio.Player
 }
 
 const (
@@ -52,21 +58,29 @@ func NewBall(dx float64, notificationBus *pubsub.Broker) *Ball {
 		log.Fatal(err)
 	}
 
+	audioPlayerHitSlow := util.NewAudioPlayer("hit_slow")
+	audioPlayerHitMedium := util.NewAudioPlayer("hit_medium")
+	audioPlayerHitFast := util.NewAudioPlayer("hit_fast")
+	audioPlayerHitVeryFast := util.NewAudioPlayer("hit_veryfast")
+
 	newBall := &Ball{
 		base: GameActorBase{
 			IsActive: true,
 		},
-		ballImage:       _ballImage,
-		xPos:            BALL_CENTER_X,
-		yPos:            BALL_CENTER_Y,
-		dx:              dx,
-		dy:              0,
-		speed:           BALL_SPEED,
-		notificationBus: notificationBus,
+		ballImage:              _ballImage,
+		xPos:                   BALL_CENTER_X,
+		yPos:                   BALL_CENTER_Y,
+		dx:                     dx,
+		dy:                     0,
+		speed:                  BALL_SPEED,
+		notificationBus:        notificationBus,
+		audioPlayerHitSlow:     audioPlayerHitSlow,
+		audioPlayerHitMedium:   audioPlayerHitMedium,
+		audioPlayerHitFast:     audioPlayerHitFast,
+		audioPlayerHitVeryFast: audioPlayerHitVeryFast,
 	}
 
 	subscriberPos := notificationBus.AddSubscriber("ball-subscriberPos")
-
 	notificationBus.Subscribe(subscriberPos, pubsub.POSITION_NOTIFICATION_TOPIC)
 	go subscriberPos.Listen(newBall.updatePosition)
 
@@ -125,6 +139,22 @@ func (b *Ball) updatePosition(message *pubsub.Message) {
 	}
 }
 
+func (b *Ball) playHitBat() {
+	if b.speed <= 10 {
+		b.audioPlayerHitSlow.Rewind()
+		b.audioPlayerHitSlow.Play()
+	} else if b.speed <= 12 {
+		b.audioPlayerHitMedium.Rewind()
+		b.audioPlayerHitMedium.Play()
+	} else if b.speed <= 16 {
+		b.audioPlayerHitFast.Rewind()
+		b.audioPlayerHitFast.Play()
+	} else {
+		b.audioPlayerHitVeryFast.Rewind()
+		b.audioPlayerHitVeryFast.Play()
+	}
+}
+
 func (b *Ball) updatePositionOfLeftBat(message *pubsub.Message) {
 	switch v := message.GetMessageBody().Data.(type) {
 	case pubsub.PositionNotificationPayload:
@@ -145,17 +175,17 @@ func moveBallAuto(b *Ball) {
 	// Each frame, we move the ball in a series of small steps.
 	// The number of steps being based on its speed attribute.
 	for i := 1; i <= b.speed; i++ {
-		moveBallAutoImpl(b)
+		moveBallImpl(b)
 	}
 }
 
 func moveBallManually(b *Ball) {
 	if ebiten.IsKeyPressed(ebiten.KeySpace) {
-		moveBallAutoImpl(b)
+		moveBallImpl(b)
 	}
 }
 
-func moveBallAutoImpl(b *Ball) {
+func moveBallImpl(b *Ball) {
 	b.xPos += b.dx
 	b.yPos += b.dy
 
@@ -201,6 +231,7 @@ func moveBallAutoImpl(b *Ball) {
 		// of the equivalent of 1 pixel regardless of its angle.
 		b.dx, b.dy = intoUnitVector(b.dx, b.dy)
 		b.speed += 1
+		b.playHitBat()
 	}
 
 	if b.hitRightBat() {
@@ -223,6 +254,7 @@ func moveBallAutoImpl(b *Ball) {
 		b.xPos = BALL_MAX_X_BAT
 		b.dx, b.dy = intoUnitVector(b.dx, b.dy)
 		b.speed += 1
+		b.playHitBat()
 	}
 }
 
