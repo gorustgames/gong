@@ -31,6 +31,7 @@ const (
 )
 
 type Bat struct {
+	base            GameActorBase
 	batImage        *ebiten.Image
 	batHitImage     *ebiten.Image
 	batEffectImage  *ebiten.Image
@@ -85,6 +86,9 @@ func NewBat(playerLocation PlayerLocation, playerType PlayerType, notificationBu
 	}
 
 	newBat := &Bat{
+		base: GameActorBase{
+			IsActive: true,
+		},
 		xPos:            _xPos,
 		yPos:            0,
 		dx:              0,
@@ -186,6 +190,10 @@ func (b *Bat) Destroy() {
 	for _, subscriber := range b.subscribers {
 		b.notificationBus.RemoveSubscriber(subscriber)
 	}
+}
+
+func (b *Bat) IsActive() bool {
+	return true
 }
 
 func (b *Bat) initHitCounter(_ *pubsub.Message) {

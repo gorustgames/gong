@@ -9,6 +9,7 @@ import (
 )
 
 type GameBoard struct {
+	base            GameActorBase
 	background      *ebiten.Image
 	xLB             float64 // xPos of left bat
 	yLB             float64 // yPos of left bat
@@ -27,6 +28,9 @@ func NewGameBoard(notificationBus *pubsub.Broker) *GameBoard {
 	}
 
 	newGameBoard := &GameBoard{
+		base: GameActorBase{
+			IsActive: true,
+		},
 		background:      _background,
 		xLB:             0,
 		yLB:             0,
@@ -79,6 +83,10 @@ func (g *GameBoard) Destroy() {
 	for _, subscriber := range g.subscribers {
 		g.notificationBus.RemoveSubscriber(subscriber)
 	}
+}
+
+func (g *GameBoard) IsActive() bool {
+	return true
 }
 
 func (g *GameBoard) updatePositions(message *pubsub.Message) {

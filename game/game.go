@@ -33,8 +33,12 @@ func (g *Game) Update(_ *ebiten.Image) error {
 		return nil
 	}
 
-	for _, actor := range g.actors {
-		actor.Update()
+	for idx, actor := range g.actors {
+		if actor.IsActive() /* update active actor*/ {
+			actor.Update()
+		} else /* remove inactive actor*/ {
+			g.YankActor(idx)
+		}
 	}
 
 	return nil
@@ -56,6 +60,14 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 	screenWidth = SCREEN_WIDTH
 	screenHeight = SCREEN_HEIGHT
 	return
+}
+
+// YankActor removes actor at position specified by index parameter
+// probably not extremely efficient (might be issue with large number of actors)
+// but here it should work just fine
+func (g *Game) YankActor(index int) {
+	newActors := append(g.actors[:index], g.actors[index+1:]...)
+	g.actors = newActors
 }
 
 func transitionToSinglePlayerCallback(_ *pubsub.Message) {

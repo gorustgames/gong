@@ -8,6 +8,7 @@ import (
 )
 
 type Menu struct {
+	base            GameActorBase
 	picture0        *ebiten.Image
 	picture1        *ebiten.Image
 	singlePlayer    bool
@@ -26,6 +27,9 @@ func NewMenu(notificationBus *pubsub.Broker) *Menu {
 	}
 
 	newMenu := &Menu{
+		base: GameActorBase{
+			IsActive: true,
+		},
 		picture0:        picture0,
 		picture1:        picture1,
 		singlePlayer:    true,
@@ -76,4 +80,8 @@ func (m *Menu) Id() string {
 
 func (m *Menu) Destroy() {
 	// nothing to do
+}
+
+func (m *Menu) IsActive() bool {
+	return true
 }

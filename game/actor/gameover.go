@@ -8,6 +8,7 @@ import (
 )
 
 type GameOver struct {
+	base            GameActorBase
 	picture         *ebiten.Image
 	notificationBus *pubsub.Broker
 }
@@ -19,6 +20,9 @@ func NewGameOver(notificationBus *pubsub.Broker) *GameOver {
 	}
 
 	newGameOver := &GameOver{
+		base: GameActorBase{
+			IsActive: true,
+		},
 		picture:         picture,
 		notificationBus: notificationBus,
 	}
@@ -48,4 +52,8 @@ func (a *GameOver) Id() string {
 
 func (a *GameOver) Destroy() {
 	// nothing to do
+}
+
+func (a *GameOver) IsActive() bool {
+	return true
 }

@@ -9,6 +9,7 @@ import (
 )
 
 type Ball struct {
+	base            GameActorBase
 	ballImage       *ebiten.Image
 	xPos            float64 // position of ball
 	yPos            float64
@@ -52,6 +53,9 @@ func NewBall(dx float64, notificationBus *pubsub.Broker) *Ball {
 	}
 
 	newBall := &Ball{
+		base: GameActorBase{
+			IsActive: true,
+		},
 		ballImage:       _ballImage,
 		xPos:            BALL_CENTER_X,
 		yPos:            BALL_CENTER_Y,
@@ -101,6 +105,10 @@ func (b *Ball) Destroy() {
 	for _, subscriber := range b.subscribers {
 		b.notificationBus.RemoveSubscriber(subscriber)
 	}
+}
+
+func (b *Ball) IsActive() bool {
+	return true
 }
 
 func (b *Ball) updatePosition(message *pubsub.Message) {

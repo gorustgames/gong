@@ -17,6 +17,13 @@ type GameActor interface {
 
 	// Destroy actor tear down logic
 	Destroy()
+
+	// Destroy returns whether actor is active or not (in which case it must be removed from the game)
+	IsActive() bool
+}
+
+type GameActorBase struct {
+	IsActive bool
 }
 
 // CreateActorsSinglePlayer
