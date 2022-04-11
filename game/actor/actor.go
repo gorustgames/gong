@@ -14,6 +14,9 @@ type GameActor interface {
 
 	// Id returns actor ID
 	Id() string
+
+	// Destroy actor tear down logic
+	Destroy()
 }
 
 // CreateActorsSinglePlayer

@@ -45,6 +45,7 @@ type Bat struct {
 	playerType      PlayerType
 	notificationBus *pubsub.Broker
 	showHitCounter  int
+	subscribers     []*pubsub.Subscriber
 }
 
 func NewBat(playerLocation PlayerLocation, playerType PlayerType, notificationBus *pubsub.Broker) *Bat {
@@ -101,6 +102,10 @@ func NewBat(playerLocation PlayerLocation, playerType PlayerType, notificationBu
 	notificationBus.Subscribe(subscriberBallPos, pubsub.POSITION_NOTIFICATION_TOPIC)
 	go subscriberBallPos.Listen(newBat.updateBallPosition)
 
+	newBat.subscribers = make([]*pubsub.Subscriber, 2)
+	newBat.subscribers[0] = subscriberBatHit
+	newBat.subscribers[1] = subscriberBallPos
+
 	return newBat
 }
 
@@ -143,6 +148,12 @@ func (b *Bat) Id() string {
 		return "actor-left-bat"
 	} else {
 		return "actor-right-bat"
+	}
+}
+
+func (b *Bat) Destroy() {
+	for _, subscriber := range b.subscribers {
+		subscriber.Destruct()
 	}
 }
 

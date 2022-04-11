@@ -6,5 +6,5 @@ import (
 
 func main() {
 	game.CreateGameBus()
-	game.ShowMenu()
+	game.StartGame()
 }

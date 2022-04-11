@@ -73,3 +73,7 @@ func (m *Menu) Draw(screen *ebiten.Image) {
 func (m *Menu) Id() string {
 	return "actor-menu"
 }
+
+func (m *Menu) Destroy() {
+	// nothing to do
+}

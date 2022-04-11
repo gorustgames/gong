@@ -20,6 +20,7 @@ type Ball struct {
 	dy              float64
 	speed           int
 	notificationBus *pubsub.Broker
+	subscribers     []*pubsub.Subscriber
 }
 
 const (
@@ -64,6 +65,10 @@ func NewBall(dx float64, notificationBus *pubsub.Broker) *Ball {
 
 	notificationBus.Subscribe(subscriberPos, pubsub.POSITION_NOTIFICATION_TOPIC)
 	go subscriberPos.Listen(newBall.updatePosition)
+
+	newBall.subscribers = make([]*pubsub.Subscriber, 1)
+	newBall.subscribers[0] = subscriberPos
+
 	return newBall
 }
 
@@ -90,6 +95,12 @@ func (b *Ball) Draw(screen *ebiten.Image) {
 
 func (b *Ball) Id() string {
 	return "actor-ball"
+}
+
+func (b *Ball) Destroy() {
+	for _, subscriber := range b.subscribers {
+		subscriber.Destruct()
+	}
 }
 
 func (b *Ball) updatePosition(message *pubsub.Message) {

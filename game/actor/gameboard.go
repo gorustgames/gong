@@ -17,6 +17,7 @@ type GameBoard struct {
 	xB              float64 // xPos of ball
 	yB              float64 // xPos of ball
 	notificationBus *pubsub.Broker
+	subscribers     []*pubsub.Subscriber
 }
 
 func NewGameBoard(notificationBus *pubsub.Broker) *GameBoard {
@@ -40,6 +41,10 @@ func NewGameBoard(notificationBus *pubsub.Broker) *GameBoard {
 
 	notificationBus.Subscribe(subscriberPos, pubsub.POSITION_NOTIFICATION_TOPIC)
 	go subscriberPos.Listen(newGameBoard.updatePositions)
+
+	newGameBoard.subscribers = make([]*pubsub.Subscriber, 1)
+	newGameBoard.subscribers[0] = subscriberPos
+
 	return newGameBoard
 }
 
@@ -68,6 +73,12 @@ func (g *GameBoard) Draw(screen *ebiten.Image) {
 
 func (g *GameBoard) Id() string {
 	return "actor-gameboard"
+}
+
+func (g *GameBoard) Destroy() {
+	for _, subscriber := range g.subscribers {
+		subscriber.Destruct()
+	}
 }
 
 func (g *GameBoard) updatePositions(message *pubsub.Message) {

@@ -59,35 +59,28 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 }
 
 func singlePlayer(_ *pubsub.Message) {
-	actors := actor.CreateActorsSinglePlayer(notificationBus)
-	newGame(actors)
+	destroyOldActors()
+	game.actors = actor.CreateActorsSinglePlayer(notificationBus)
 }
 
 func multiPlayer(_ *pubsub.Message) {
-	actors := actor.CreateActorsMultiPlayer(notificationBus)
-	newGame(actors)
+	destroyOldActors()
+	game.actors = actor.CreateActorsMultiPlayer(notificationBus)
 }
 
 func menu(_ *pubsub.Message) {
-	actors := actor.CreateActorsMenu(notificationBus)
-	newGame(actors)
+	destroyOldActors()
+	game.actors = actor.CreateActorsMenu(notificationBus)
 }
 
 func gameover(_ *pubsub.Message) {
-	actors := actor.CreateActorsGameOver(notificationBus)
-	newGame(actors)
+	destroyOldActors()
+	game.actors = actor.CreateActorsGameOver(notificationBus)
 }
 
-func newGame(actors []actor.GameActor) {
-	game = Game{
-		actors: actors,
-	}
-
-	ebiten.SetWindowSize(SCREEN_WIDTH, SCREEN_HEIGHT)
-	ebiten.SetWindowTitle("Go Pong")
-
-	if err := ebiten.RunGame(&game); err != nil {
-		log.Fatal(err)
+func destroyOldActors() {
+	for _, actor := range game.actors {
+		actor.Destroy()
 	}
 }
 
@@ -111,12 +104,15 @@ func CreateGameBus() {
 
 }
 
-func ShowMenu() {
+func StartGame() {
 	actors := actor.CreateActorsMenu(notificationBus)
-
+	// actors := actor.CreateActorsSinglePlayer(notificationBus)
 	game = Game{
 		actors: actors,
 	}
+
+	ebiten.SetWindowSize(SCREEN_WIDTH, SCREEN_HEIGHT)
+	ebiten.SetWindowTitle("Go Pong")
 
 	if err := ebiten.RunGame(&game); err != nil {
 		log.Fatal(err)
