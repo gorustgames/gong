@@ -120,8 +120,8 @@ func createGameBus() {
 func StartGame() {
 	createGameBus()
 
-	actors := actor.CreateActorsMenu(notificationBus)
-	//actors := actor.CreateActorsSinglePlayer(notificationBus)
+	// actors := actor.CreateActorsMenu(notificationBus)
+	actors := actor.CreateActorsGameOver(notificationBus)
 	game = Game{
 		actors: actors,
 	}

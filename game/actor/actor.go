@@ -48,6 +48,7 @@ func CreateActorsMenu(notificationBus *pubsub.Broker) []GameActor {
 }
 
 func CreateActorsGameOver(notificationBus *pubsub.Broker) []GameActor {
-	var empty []GameActor
-	return empty
+	return []GameActor{
+		NewGameOver(notificationBus),
+	}
 }

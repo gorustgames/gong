@@ -7,6 +7,8 @@ const (
 	RightBatActor
 	BallActor
 	MenuActor
+	GameBoard
+	GameOver
 )
 
 const (
