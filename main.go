@@ -5,6 +5,5 @@ import (
 )
 
 func main() {
-	game.CreateGameBus()
 	game.StartGame()
 }

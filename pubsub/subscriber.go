@@ -10,14 +10,15 @@ import (
 type SubscriberCallback = func(message *Message)
 
 type Subscriber struct {
-	id       string          // id of subscriber
+	id       string // id of subscriber
+	name     string
 	messages chan *Message   // messages channel
 	topics   map[string]bool // topics it is subscribed to.
 	active   bool            // if given subscriber is active
 	mutex    sync.RWMutex    // lock
 }
 
-func CreateNewSubscriber() (string, *Subscriber) {
+func CreateNewSubscriber(name string) (string, *Subscriber) {
 	// returns a new subscriber.
 	b := make([]byte, 8)
 	_, err := rand.Read(b)
@@ -27,6 +28,7 @@ func CreateNewSubscriber() (string, *Subscriber) {
 	id := fmt.Sprintf("%X-%X", b[0:4], b[4:8])
 	return id, &Subscriber{
 		id:       id,
+		name:     name,
 		messages: make(chan *Message),
 		topics:   map[string]bool{},
 		active:   true,
@@ -77,10 +79,9 @@ func (s *Subscriber) Signal(msg *Message) {
 
 func (s *Subscriber) Listen(callback SubscriberCallback) {
 	// Listens to the message channel, prints once received.
-	for {
-		if msg, ok := <-s.messages; ok {
-			// log.Printf("Subscriber %s, received: %s from topic: %s\n", s.id, msg.GetMessageBody(), msg.GetTopic())
-			callback(msg)
-		}
+	for msg := range s.messages {
+		// log.Printf("Subscriber %s, received: %s from topic: %s\n", s.id, msg.GetMessageBody(), msg.GetTopic())
+		callback(msg)
 	}
+	log.Printf("Subscriber %s(%s), leaving listen loop", s.id, s.name)
 }

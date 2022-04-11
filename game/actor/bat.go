@@ -90,7 +90,7 @@ func NewBat(playerLocation PlayerLocation, playerType PlayerType, notificationBu
 		showHitCounter:  0,
 	}
 
-	subscriberBatHit := notificationBus.AddSubscriber()
+	subscriberBatHit := notificationBus.AddSubscriber("bat-subscriberBatHit")
 	if playerLocation == LeftPlayer {
 		notificationBus.Subscribe(subscriberBatHit, pubsub.LEFT_BAT_HIT_NOTIFICATION_TOPIC)
 	} else {
@@ -98,7 +98,7 @@ func NewBat(playerLocation PlayerLocation, playerType PlayerType, notificationBu
 	}
 	go subscriberBatHit.Listen(newBat.initHitCounter)
 
-	subscriberBallPos := notificationBus.AddSubscriber()
+	subscriberBallPos := notificationBus.AddSubscriber("bat-subscriberBallPos")
 	notificationBus.Subscribe(subscriberBallPos, pubsub.POSITION_NOTIFICATION_TOPIC)
 	go subscriberBallPos.Listen(newBat.updateBallPosition)
 
@@ -153,7 +153,7 @@ func (b *Bat) Id() string {
 
 func (b *Bat) Destroy() {
 	for _, subscriber := range b.subscribers {
-		subscriber.Destruct()
+		b.notificationBus.RemoveSubscriber(subscriber)
 	}
 }
 

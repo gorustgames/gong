@@ -21,11 +21,11 @@ func NewBroker() *Broker {
 	}
 }
 
-func (b *Broker) AddSubscriber() *Subscriber {
+func (b *Broker) AddSubscriber(name string) *Subscriber {
 	// Add subscriber to the broker.
 	b.mut.Lock()
 	defer b.mut.Unlock()
-	id, s := CreateNewSubscriber()
+	id, s := CreateNewSubscriber(name)
 	b.subscribers[id] = s
 	return s
 }

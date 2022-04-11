@@ -37,7 +37,7 @@ func NewGameBoard(notificationBus *pubsub.Broker) *GameBoard {
 		notificationBus: notificationBus,
 	}
 
-	subscriberPos := notificationBus.AddSubscriber()
+	subscriberPos := notificationBus.AddSubscriber("gameboard-subscriberPos")
 
 	notificationBus.Subscribe(subscriberPos, pubsub.POSITION_NOTIFICATION_TOPIC)
 	go subscriberPos.Listen(newGameBoard.updatePositions)
@@ -77,7 +77,7 @@ func (g *GameBoard) Id() string {
 
 func (g *GameBoard) Destroy() {
 	for _, subscriber := range g.subscribers {
-		subscriber.Destruct()
+		g.notificationBus.RemoveSubscriber(subscriber)
 	}
 }
 

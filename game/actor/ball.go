@@ -61,7 +61,7 @@ func NewBall(dx float64, notificationBus *pubsub.Broker) *Ball {
 		notificationBus: notificationBus,
 	}
 
-	subscriberPos := notificationBus.AddSubscriber()
+	subscriberPos := notificationBus.AddSubscriber("ball-subscriberPos")
 
 	notificationBus.Subscribe(subscriberPos, pubsub.POSITION_NOTIFICATION_TOPIC)
 	go subscriberPos.Listen(newBall.updatePosition)
@@ -99,7 +99,7 @@ func (b *Ball) Id() string {
 
 func (b *Ball) Destroy() {
 	for _, subscriber := range b.subscribers {
-		subscriber.Destruct()
+		b.notificationBus.RemoveSubscriber(subscriber)
 	}
 }
 
