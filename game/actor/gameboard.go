@@ -115,9 +115,19 @@ func (g *GameBoard) playScore() {
 	g.audioPlayerScore.Play()
 }
 
+func (g *GameBoard) checkScore(score int) {
+	if score > 20 {
+		g.notificationBus.Publish(pubsub.CHANGE_GAME_STATE_GAME_OVER_TOPIC, pubsub.GameNotification{
+			ActorType: pubsub.GameOverActor,
+			Data:      nil,
+		})
+	}
+}
+
 func (g *GameBoard) leftBatMiss(message *pubsub.Message) {
 	g.leftScore += 1
 	g.playScore()
+
 }
 
 func (g *GameBoard) rightBatMiss(message *pubsub.Message) {

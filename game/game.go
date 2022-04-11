@@ -7,12 +7,14 @@ import (
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/v2/audio"
 	"log"
+	"sync"
 	"time"
 )
 
 type Game struct {
 	actors      []actor.GameActor
 	audioPlayer *audio.Player
+	mut         sync.RWMutex
 }
 
 const (
@@ -66,6 +68,8 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 // but here it should work just fine
 func (g *Game) YankActor(index int) {
 	// log.Printf("YankActor: %d", index)
+	g.mut.RLock()
+	defer g.mut.RUnlock()
 	newActors := append(g.actors[:index], g.actors[index+1:]...)
 	g.actors = newActors
 }

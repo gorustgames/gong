@@ -33,7 +33,7 @@ func NewGameOver(notificationBus *pubsub.Broker) *GameOver {
 func (a *GameOver) Update() error {
 	if ebiten.IsKeyPressed(ebiten.KeySpace) {
 		a.notificationBus.Publish(pubsub.CHANGE_GAME_STATE_MENU_TOPIC, pubsub.GameNotification{
-			ActorType: pubsub.GameOver,
+			ActorType: pubsub.GameOverActor,
 			Data:      nil,
 		})
 	}
