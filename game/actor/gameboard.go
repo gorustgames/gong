@@ -2,25 +2,28 @@ package actor
 
 import (
 	"fmt"
+	"github.com/gorustgames/gong/game/util"
 	"github.com/gorustgames/gong/pubsub"
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
+	"github.com/hajimehoshi/ebiten/v2/audio"
 	"log"
 )
 
 type GameBoard struct {
-	base            GameActorBase
-	background      *ebiten.Image
-	xLB             float64 // xPos of left bat
-	yLB             float64 // yPos of left bat
-	xRB             float64 // xPos of right bat
-	yRB             float64 // yPos of right bat
-	xB              float64 // xPos of ball
-	yB              float64 // xPos of ball
-	leftScore       int
-	rightScore      int
-	notificationBus *pubsub.Broker
-	subscribers     []*pubsub.Subscriber
+	base             GameActorBase
+	background       *ebiten.Image
+	xLB              float64 // xPos of left bat
+	yLB              float64 // yPos of left bat
+	xRB              float64 // xPos of right bat
+	yRB              float64 // yPos of right bat
+	xB               float64 // xPos of ball
+	yB               float64 // xPos of ball
+	leftScore        int
+	rightScore       int
+	notificationBus  *pubsub.Broker
+	subscribers      []*pubsub.Subscriber
+	audioPlayerScore *audio.Player
 }
 
 func NewGameBoard(notificationBus *pubsub.Broker) *GameBoard {
@@ -29,20 +32,23 @@ func NewGameBoard(notificationBus *pubsub.Broker) *GameBoard {
 		log.Fatal(err)
 	}
 
+	audioPlayerScore := util.NewAudioPlayer("score")
+
 	newGameBoard := &GameBoard{
 		base: GameActorBase{
 			IsActive: true,
 		},
-		background:      _background,
-		xLB:             0,
-		yLB:             0,
-		xRB:             0,
-		yRB:             0,
-		xB:              0,
-		yB:              0,
-		leftScore:       0,
-		rightScore:      0,
-		notificationBus: notificationBus,
+		background:       _background,
+		xLB:              0,
+		yLB:              0,
+		xRB:              0,
+		yRB:              0,
+		xB:               0,
+		yB:               0,
+		leftScore:        0,
+		rightScore:       0,
+		notificationBus:  notificationBus,
+		audioPlayerScore: audioPlayerScore,
 	}
 
 	subscriberPos := notificationBus.AddSubscriber("gameboard-subscriberPos")
@@ -104,12 +110,19 @@ func (g *GameBoard) IsActive() bool {
 	return true
 }
 
+func (g *GameBoard) playScore() {
+	g.audioPlayerScore.Rewind()
+	g.audioPlayerScore.Play()
+}
+
 func (g *GameBoard) leftBatMiss(message *pubsub.Message) {
 	g.leftScore += 1
+	g.playScore()
 }
 
 func (g *GameBoard) rightBatMiss(message *pubsub.Message) {
 	g.rightScore += 1
+	g.playScore()
 }
 
 func (g *GameBoard) updatePositions(message *pubsub.Message) {
