@@ -5,6 +5,7 @@ import (
 	"github.com/gorustgames/gong/pubsub"
 	"github.com/hajimehoshi/ebiten"
 	"log"
+	"time"
 )
 
 type Game struct {
@@ -57,26 +58,33 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 	return
 }
 
-func singlePlayer(_ *pubsub.Message) {
+func transitionToSinglePlayerCallback(_ *pubsub.Message) {
+	log.Printf("showing game SP")
 	destroyOldActors()
 	game.actors = actor.CreateActorsSinglePlayer(notificationBus)
-	changingGameStateInProgress = false
 	enableRendering()
 }
 
-func multiPlayer(_ *pubsub.Message) {
+func transitionToMultiPlayerCallback(_ *pubsub.Message) {
+	log.Printf("showing game MP")
 	destroyOldActors()
 	game.actors = actor.CreateActorsMultiPlayer(notificationBus)
 	enableRendering()
 }
 
-func menu(_ *pubsub.Message) {
+func transitionToMenuCallback(_ *pubsub.Message) {
+	log.Printf("showing menu")
 	destroyOldActors()
+	// sleep for 0.5 seconds before showing menu, otherwise it
+	// is happening that space key hit will be also captured by menu
+	// actor and it will proceed directly to single player game without
+	// really waiting for user choice.
+	time.Sleep(500 * time.Millisecond)
 	game.actors = actor.CreateActorsMenu(notificationBus)
 	enableRendering()
 }
 
-func gameover(_ *pubsub.Message) {
+func transitionToGameoverCallback(_ *pubsub.Message) {
 	destroyOldActors()
 	game.actors = actor.CreateActorsGameOver(notificationBus)
 	enableRendering()
@@ -87,13 +95,17 @@ func destroyOldActors() {
 	for _, actor := range game.actors {
 		actor.Destroy()
 	}
+
+	game.actors = nil // make GC to remove old actors
 }
 
 func disableRendering() {
-	changingGameStateInProgress = true // disable state update & rendering loop
+	// disable state update & rendering loop
+	changingGameStateInProgress = true
 }
 
 func enableRendering() {
+	// enable state update & rendering loop
 	changingGameStateInProgress = false
 }
 
@@ -110,18 +122,18 @@ func createGameBus() {
 	notificationBus.Subscribe(subscriberMP, pubsub.CHANGE_GAME_STATE_MULTI_PLAYER_TOPIC)
 	notificationBus.Subscribe(subscriberGO, pubsub.CHANGE_GAME_STATE_GAME_OVER_TOPIC)
 
-	go subscriberMN.Listen(menu)
-	go subscriberSP.Listen(singlePlayer)
-	go subscriberMP.Listen(multiPlayer)
-	go subscriberGO.Listen(gameover)
+	go subscriberMN.Listen(transitionToMenuCallback)
+	go subscriberSP.Listen(transitionToSinglePlayerCallback)
+	go subscriberMP.Listen(transitionToMultiPlayerCallback)
+	go subscriberGO.Listen(transitionToGameoverCallback)
 
 }
 
 func StartGame() {
 	createGameBus()
 
-	// actors := actor.CreateActorsMenu(notificationBus)
-	actors := actor.CreateActorsGameOver(notificationBus)
+	actors := actor.CreateActorsMenu(notificationBus)
+
 	game = Game{
 		actors: actors,
 	}
