@@ -188,6 +188,14 @@ func moveBallAutoImpl(b *Ball) {
 			Data:      nil,
 		})
 
+		b.notificationBus.Publish(pubsub.CREATE_IMPACT_TOPIC, pubsub.GameNotification{
+			ActorType: pubsub.BallActor,
+			Data: pubsub.PositionNotificationPayload{
+				XPos: b.xPos,
+				YPos: b.yPos,
+			},
+		})
+
 		b.xPos = BALL_MIN_X_BAT
 		// Ensure our direction vector is a unit vector, i.e. represents a distance
 		// of the equivalent of 1 pixel regardless of its angle.
@@ -202,6 +210,14 @@ func moveBallAutoImpl(b *Ball) {
 		b.notificationBus.Publish(pubsub.RIGHT_BAT_HIT_NOTIFICATION_TOPIC, pubsub.GameNotification{
 			ActorType: pubsub.BallActor,
 			Data:      nil,
+		})
+
+		b.notificationBus.Publish(pubsub.CREATE_IMPACT_TOPIC, pubsub.GameNotification{
+			ActorType: pubsub.BallActor,
+			Data: pubsub.PositionNotificationPayload{
+				XPos: b.xPos,
+				YPos: b.yPos,
+			},
 		})
 
 		b.xPos = BALL_MAX_X_BAT

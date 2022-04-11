@@ -102,6 +102,14 @@ func transitionToGameoverCallback(_ *pubsub.Message) {
 	enableRendering()
 }
 
+func createImpactCallback(message *pubsub.Message) {
+	switch v := message.GetMessageBody().Data.(type) {
+	case pubsub.PositionNotificationPayload:
+		impactActor := actor.NewImpact(v.XPos, v.YPos, notificationBus)
+		game.actors = append(game.actors, impactActor)
+	}
+}
+
 func destroyOldActors() {
 	disableRendering()
 	for _, actor := range game.actors {
@@ -128,16 +136,19 @@ func createGameBus() {
 	subscriberSP := notificationBus.AddSubscriber("subscriberSP")
 	subscriberMP := notificationBus.AddSubscriber("subscriberMP")
 	subscriberGO := notificationBus.AddSubscriber("subscriberGO")
+	subscriberIM := notificationBus.AddSubscriber("subscriberIM")
 
 	notificationBus.Subscribe(subscriberMN, pubsub.CHANGE_GAME_STATE_MENU_TOPIC)
 	notificationBus.Subscribe(subscriberSP, pubsub.CHANGE_GAME_STATE_SINGLE_PLAYER_TOPIC)
 	notificationBus.Subscribe(subscriberMP, pubsub.CHANGE_GAME_STATE_MULTI_PLAYER_TOPIC)
 	notificationBus.Subscribe(subscriberGO, pubsub.CHANGE_GAME_STATE_GAME_OVER_TOPIC)
+	notificationBus.Subscribe(subscriberIM, pubsub.CREATE_IMPACT_TOPIC)
 
 	go subscriberMN.Listen(transitionToMenuCallback)
 	go subscriberSP.Listen(transitionToSinglePlayerCallback)
 	go subscriberMP.Listen(transitionToMultiPlayerCallback)
 	go subscriberGO.Listen(transitionToGameoverCallback)
+	go subscriberIM.Listen(createImpactCallback)
 
 }
 
