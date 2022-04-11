@@ -66,6 +66,7 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 // probably not extremely efficient (might be issue with large number of actors)
 // but here it should work just fine
 func (g *Game) YankActor(index int) {
+	// log.Printf("YankActor: %d", index)
 	newActors := append(g.actors[:index], g.actors[index+1:]...)
 	g.actors = newActors
 }

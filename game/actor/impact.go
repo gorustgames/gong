@@ -82,5 +82,5 @@ func (a *Impact) Destroy() {
 }
 
 func (a *Impact) IsActive() bool {
-	return true
+	return a.base.IsActive
 }
