@@ -151,14 +151,24 @@ func moveBallAutoImpl(b *Ball) {
 	b.xPos += b.dx
 	b.yPos += b.dy
 
-	// TODO: for now bounce off but this means new set in real game
 	if b.hitBottom() || b.hitTop() {
 		b.dy = -b.dy
 	}
 
-	// TODO: for now bounce off but this means new set in real game
-	if b.hitLeft() || b.hitRight() {
+	if b.hitLeft() {
 		b.dx = -b.dx
+		b.notificationBus.Publish(pubsub.LEFT_BAT_MISS_NOTIFICATION_TOPIC, pubsub.GameNotification{
+			ActorType: pubsub.BallActor,
+			Data:      nil,
+		})
+	}
+
+	if b.hitRight() {
+		b.dx = -b.dx
+		b.notificationBus.Publish(pubsub.RIGHT_BAT_MISS_NOTIFICATION_TOPIC, pubsub.GameNotification{
+			ActorType: pubsub.BallActor,
+			Data:      nil,
+		})
 	}
 
 	if b.hitLeftBat() {

@@ -33,6 +33,7 @@ const (
 type Bat struct {
 	batImage        *ebiten.Image
 	batHitImage     *ebiten.Image
+	batEffectImage  *ebiten.Image
 	xPos            float64
 	yPos            float64
 	dx              float64
@@ -45,6 +46,7 @@ type Bat struct {
 	playerType      PlayerType
 	notificationBus *pubsub.Broker
 	showHitCounter  int
+	showMissCounter int
 	subscribers     []*pubsub.Subscriber
 }
 
@@ -68,6 +70,15 @@ func NewBat(playerLocation PlayerLocation, playerType PlayerType, notificationBu
 		log.Fatal(err)
 	}
 
+	fileName = "assets/effect0.png"
+	if playerLocation == RightPlayer {
+		fileName = "assets/effect1.png"
+	}
+	_batEffectImage, _, err := ebitenutil.NewImageFromFile(fileName, ebiten.FilterDefault)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	_xPos := -40.0
 	if playerLocation == RightPlayer {
 		_xPos = 680.0
@@ -84,10 +95,12 @@ func NewBat(playerLocation PlayerLocation, playerType PlayerType, notificationBu
 		speed:           PLAYER_SPEED,
 		batImage:        _batImage,
 		batHitImage:     _batHitImage,
+		batEffectImage:  _batEffectImage,
 		playerLocation:  playerLocation,
 		playerType:      playerType,
 		notificationBus: notificationBus,
 		showHitCounter:  0,
+		showMissCounter: 0,
 	}
 
 	subscriberBatHit := notificationBus.AddSubscriber("bat-subscriberBatHit")
@@ -98,13 +111,22 @@ func NewBat(playerLocation PlayerLocation, playerType PlayerType, notificationBu
 	}
 	go subscriberBatHit.Listen(newBat.initHitCounter)
 
+	subscriberBatMiss := notificationBus.AddSubscriber("bat-subscriberBatMiss")
+	if playerLocation == LeftPlayer {
+		notificationBus.Subscribe(subscriberBatMiss, pubsub.LEFT_BAT_MISS_NOTIFICATION_TOPIC)
+	} else {
+		notificationBus.Subscribe(subscriberBatMiss, pubsub.RIGHT_BAT_MISS_NOTIFICATION_TOPIC)
+	}
+	go subscriberBatMiss.Listen(newBat.initMissCounter)
+
 	subscriberBallPos := notificationBus.AddSubscriber("bat-subscriberBallPos")
 	notificationBus.Subscribe(subscriberBallPos, pubsub.POSITION_NOTIFICATION_TOPIC)
 	go subscriberBallPos.Listen(newBat.updateBallPosition)
 
-	newBat.subscribers = make([]*pubsub.Subscriber, 2)
+	newBat.subscribers = make([]*pubsub.Subscriber, 3)
 	newBat.subscribers[0] = subscriberBatHit
-	newBat.subscribers[1] = subscriberBallPos
+	newBat.subscribers[1] = subscriberBatMiss
+	newBat.subscribers[2] = subscriberBallPos
 
 	return newBat
 }
@@ -130,14 +152,23 @@ func (b *Bat) Update() error {
 		b.showHitCounter -= 1
 	}
 
+	if b.showMissCounter > 0 {
+		b.showMissCounter -= 1
+	}
+
 	return nil
 }
 
 func (b *Bat) Draw(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Translate(b.xPos, b.yPos)
+
 	if b.showHitCounter > 0 {
 		screen.DrawImage(b.batHitImage, op)
+	} else if b.showMissCounter > 0 {
+		opEffect := &ebiten.DrawImageOptions{}
+		opEffect.GeoM.Translate(0, 0)
+		screen.DrawImage(b.batEffectImage, opEffect)
 	} else {
 		screen.DrawImage(b.batImage, op)
 	}
@@ -160,6 +191,10 @@ func (b *Bat) Destroy() {
 func (b *Bat) initHitCounter(_ *pubsub.Message) {
 	b.showHitCounter = 20
 	b.aiOffset = randInRange(-10, 10)
+}
+
+func (b *Bat) initMissCounter(_ *pubsub.Message) {
+	b.showMissCounter = 20
 }
 
 func (b *Bat) updateBallPosition(message *pubsub.Message) {
