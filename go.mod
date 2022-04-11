@@ -3,14 +3,21 @@ module github.com/gorustgames/gong
 go 1.18
 
 require (
+	github.com/hajimehoshi/ebiten v1.12.12
+	github.com/hajimehoshi/ebiten/v2 v2.2.6
+	github.com/stretchr/testify v1.7.1
+)
+
+require (
 	github.com/davecgh/go-spew v1.1.0 // indirect
-	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20200707082815-5321531c36a2 // indirect
-	github.com/hajimehoshi/ebiten v1.12.12 // indirect
+	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20210727001814-0db043d8d5be // indirect
+	github.com/hajimehoshi/oto/v2 v2.1.0-alpha.2 // indirect
+	github.com/jfreymuth/oggvorbis v1.0.3 // indirect
+	github.com/jfreymuth/vorbis v1.0.2 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/stretchr/testify v1.7.1 // indirect
 	golang.org/x/exp v0.0.0-20190731235908-ec7cb31e5a56 // indirect
-	golang.org/x/image v0.0.0-20200801110659-972c09e46d76 // indirect
-	golang.org/x/mobile v0.0.0-20210208171126-f462b3930c8f // indirect
-	golang.org/x/sys v0.0.0-20200918174421-af09f7315aff // indirect
+	golang.org/x/image v0.0.0-20210628002857-a66eb6448b8d // indirect
+	golang.org/x/mobile v0.0.0-20210902104108-5d9a33257ab5 // indirect
+	golang.org/x/sys v0.0.0-20210917161153-d61c044b1678 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c // indirect
 )

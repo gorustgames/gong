@@ -4,16 +4,22 @@ import (
 	"github.com/gorustgames/gong/game/actor"
 	"github.com/gorustgames/gong/pubsub"
 	"github.com/hajimehoshi/ebiten"
+	"github.com/hajimehoshi/ebiten/v2/audio"
+	"github.com/hajimehoshi/ebiten/v2/audio/vorbis"
 	"log"
+	"os"
 	"time"
 )
 
 type Game struct {
-	actors []actor.GameActor
+	actors      []actor.GameActor
+	audioPlayer *audio.Player
 }
 
 const (
 	SCREEN_WIDTH, SCREEN_HEIGHT = 800, 480
+	SAMPLE_RATE                 = 44100
+	MUSIC_LEN_SEC               = 64
 )
 
 var (
@@ -153,14 +159,64 @@ func createGameBus() {
 
 }
 
+func prepareAudioPlayerMusic() *audio.Player {
+	audioContext := audio.NewContext(SAMPLE_RATE)
+	f, err := os.Open("assets/sounds/theme.ogg")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	data, err := vorbis.DecodeWithSampleRate(SAMPLE_RATE, f)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	audioPlayer, err := audioContext.NewPlayer(data)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return audioPlayer
+}
+
+// prepareAudioPlayerMusicInfinite creates infinite music loop
+// https://programmer.ink/think/ebiten-learning-infinite-loop-player.html
+func prepareAudioPlayerMusicInfinite() *audio.Player {
+	audioContext := audio.NewContext(SAMPLE_RATE)
+	f, err := os.Open("assets/sounds/theme.ogg")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	data, err := vorbis.DecodeWithSampleRate(SAMPLE_RATE, f)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	s := audio.NewInfiniteLoopWithIntro(data, 0, MUSIC_LEN_SEC*4*SAMPLE_RATE)
+
+	audioPlayer, err := audioContext.NewPlayer(s)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return audioPlayer
+}
+
 func StartGame() {
 	createGameBus()
 
 	actors := actor.CreateActorsMenu(notificationBus)
 
+	audioPlayer := prepareAudioPlayerMusicInfinite()
+
 	game = Game{
-		actors: actors,
+		actors:      actors,
+		audioPlayer: audioPlayer,
 	}
+
+	game.audioPlayer.Rewind()
+	game.audioPlayer.Play()
 
 	ebiten.SetWindowSize(SCREEN_WIDTH, SCREEN_HEIGHT)
 	ebiten.SetWindowTitle("Go Pong")
