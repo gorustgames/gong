@@ -17,6 +17,8 @@ type GameBoard struct {
 	yRB             float64 // yPos of right bat
 	xB              float64 // xPos of ball
 	yB              float64 // xPos of ball
+	leftScore       int
+	rightScore      int
 	notificationBus *pubsub.Broker
 	subscribers     []*pubsub.Subscriber
 }
@@ -38,16 +40,27 @@ func NewGameBoard(notificationBus *pubsub.Broker) *GameBoard {
 		yRB:             0,
 		xB:              0,
 		yB:              0,
+		leftScore:       0,
+		rightScore:      0,
 		notificationBus: notificationBus,
 	}
 
 	subscriberPos := notificationBus.AddSubscriber("gameboard-subscriberPos")
-
 	notificationBus.Subscribe(subscriberPos, pubsub.POSITION_NOTIFICATION_TOPIC)
 	go subscriberPos.Listen(newGameBoard.updatePositions)
 
-	newGameBoard.subscribers = make([]*pubsub.Subscriber, 1)
+	subscriberLeftBatMiss := notificationBus.AddSubscriber("gameboard-subscriberLeftBatMiss")
+	notificationBus.Subscribe(subscriberLeftBatMiss, pubsub.LEFT_BAT_MISS_NOTIFICATION_TOPIC)
+	go subscriberLeftBatMiss.Listen(newGameBoard.leftBatMiss)
+
+	subscriberRightBatMiss := notificationBus.AddSubscriber("gameboard-subscriberRightBatMiss")
+	notificationBus.Subscribe(subscriberRightBatMiss, pubsub.RIGHT_BAT_MISS_NOTIFICATION_TOPIC)
+	go subscriberRightBatMiss.Listen(newGameBoard.rightBatMiss)
+
+	newGameBoard.subscribers = make([]*pubsub.Subscriber, 3)
 	newGameBoard.subscribers[0] = subscriberPos
+	newGameBoard.subscribers[1] = subscriberLeftBatMiss
+	newGameBoard.subscribers[2] = subscriberRightBatMiss
 
 	return newGameBoard
 }
@@ -64,13 +77,15 @@ func (g *GameBoard) Draw(screen *ebiten.Image) {
 	// debug print of positions of crucial game actors
 	ebitenutil.DebugPrint(
 		screen,
-		fmt.Sprintf("LB: x = %f, y = %f RB: x = %f, y = %f B: x = %f, y = %f",
+		fmt.Sprintf("LB: x = %f, y = %f RB: x = %f, y = %f B: x = %f, y = %f.   Score: %d:%d",
 			g.xLB,
 			g.yLB,
 			g.xRB,
 			g.yRB,
 			g.xB,
 			g.yB,
+			g.leftScore,
+			g.rightScore,
 		),
 	)
 }
@@ -87,6 +102,14 @@ func (g *GameBoard) Destroy() {
 
 func (g *GameBoard) IsActive() bool {
 	return true
+}
+
+func (g *GameBoard) leftBatMiss(message *pubsub.Message) {
+	g.leftScore += 1
+}
+
+func (g *GameBoard) rightBatMiss(message *pubsub.Message) {
+	g.rightScore += 1
 }
 
 func (g *GameBoard) updatePositions(message *pubsub.Message) {

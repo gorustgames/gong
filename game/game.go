@@ -199,7 +199,7 @@ func prepareAudioPlayerMusicInfinite() *audio.Player {
 	if err != nil {
 		log.Fatal(err)
 	}
-
+	audioPlayer.SetVolume(0.3)
 	return audioPlayer
 }
 
