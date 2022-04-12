@@ -13,6 +13,8 @@ import (
 type GameBoard struct {
 	base             GameActorBase
 	background       *ebiten.Image
+	digitsLeft       [10]*ebiten.Image
+	digitsRight      [10]*ebiten.Image
 	xLB              float64 // xPos of left bat
 	yLB              float64 // yPos of left bat
 	xRB              float64 // xPos of right bat
@@ -52,6 +54,14 @@ func NewGameBoard(notificationBus *pubsub.Broker) *GameBoard {
 		audioPlayerScore: audioPlayerScore,
 	}
 
+	for i := 0; i < 10; i++ {
+		newGameBoard.digitsLeft[i], _, err = ebitenutil.NewImageFromFile(fmt.Sprintf("assets/digit1%d.png", i), ebiten.FilterDefault)
+		newGameBoard.digitsRight[i], _, err = ebitenutil.NewImageFromFile(fmt.Sprintf("assets/digit2%d.png", i), ebiten.FilterDefault)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
 	subscriberPos := notificationBus.AddSubscriber("gameboard-subscriberPos")
 	notificationBus.Subscribe(subscriberPos, pubsub.POSITION_NOTIFICATION_TOPIC)
 	go subscriberPos.Listen(newGameBoard.updatePositions)
@@ -81,8 +91,19 @@ func (g *GameBoard) Draw(screen *ebiten.Image) {
 	op.GeoM.Translate(0, 0)
 	screen.DrawImage(g.background, op)
 
+	// left score
+	opLS := &ebiten.DrawImageOptions{}
+	opLS.GeoM.Translate(280, 50)
+
+	// right score
+	opRS := &ebiten.DrawImageOptions{}
+	opRS.GeoM.Translate(450, 50)
+
+	screen.DrawImage(g.digitsLeft[g.leftScore], opLS)
+	screen.DrawImage(g.digitsRight[g.rightScore], opRS)
+
 	// debug print of positions of crucial game actors
-	ebitenutil.DebugPrint(
+	/*ebitenutil.DebugPrint(
 		screen,
 		fmt.Sprintf("LB: x = %f, y = %f RB: x = %f, y = %f B: x = %f, y = %f.   Score: %d:%d",
 			g.xLB,
@@ -94,7 +115,7 @@ func (g *GameBoard) Draw(screen *ebiten.Image) {
 			g.leftScore,
 			g.rightScore,
 		),
-	)
+	)*/
 }
 
 func (g *GameBoard) Id() string {
@@ -117,7 +138,7 @@ func (g *GameBoard) playScore() {
 }
 
 func (g *GameBoard) checkScore(score int) {
-	if score > 20 {
+	if score > 9 {
 		g.notificationBus.Publish(pubsub.CHANGE_GAME_STATE_GAME_OVER_TOPIC, pubsub.GameNotification{
 			ActorType: pubsub.GameOverActor,
 			Data:      nil,
