@@ -1,6 +1,7 @@
 package actor
 
 import (
+	"fmt"
 	"github.com/gorustgames/gong/game/util"
 	"github.com/gorustgames/gong/pubsub"
 	"github.com/hajimehoshi/ebiten"
@@ -66,6 +67,7 @@ func NewBall(dx float64, notificationBus *pubsub.Broker) *Ball {
 	newBall := &Ball{
 		base: GameActorBase{
 			IsActive: true,
+			Id:       fmt.Sprintf("actor-ball-%s", util.GenerateShortId()),
 		},
 		ballImage:              _ballImage,
 		xPos:                   BALL_CENTER_X,
@@ -112,7 +114,7 @@ func (b *Ball) Draw(screen *ebiten.Image) {
 }
 
 func (b *Ball) Id() string {
-	return "actor-ball"
+	return b.base.Id
 }
 
 func (b *Ball) Destroy() {

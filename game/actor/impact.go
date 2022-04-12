@@ -1,6 +1,8 @@
 package actor
 
 import (
+	"fmt"
+	"github.com/gorustgames/gong/game/util"
 	"github.com/gorustgames/gong/pubsub"
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
@@ -45,6 +47,7 @@ func NewImpact(xPos float64, yPos float64, notificationBus *pubsub.Broker) *Impa
 	newImpact := &Impact{
 		base: GameActorBase{
 			IsActive: true,
+			Id:       fmt.Sprintf("actor-impact-%s", util.GenerateShortId()),
 		},
 		pictures:        []*ebiten.Image{picture0, picture1, picture2, picture3, picture4},
 		xPos:            xPos,
@@ -74,7 +77,7 @@ func (a *Impact) Draw(screen *ebiten.Image) {
 }
 
 func (a *Impact) Id() string {
-	return "actor-impact"
+	return a.base.Id
 }
 
 func (a *Impact) Destroy() {

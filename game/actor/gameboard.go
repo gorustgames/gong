@@ -37,6 +37,7 @@ func NewGameBoard(notificationBus *pubsub.Broker) *GameBoard {
 	newGameBoard := &GameBoard{
 		base: GameActorBase{
 			IsActive: true,
+			Id:       fmt.Sprintf("actor-gameboard-%s", util.GenerateShortId()),
 		},
 		background:       _background,
 		xLB:              0,
@@ -97,7 +98,7 @@ func (g *GameBoard) Draw(screen *ebiten.Image) {
 }
 
 func (g *GameBoard) Id() string {
-	return "actor-gameboard"
+	return g.base.Id
 }
 
 func (g *GameBoard) Destroy() {

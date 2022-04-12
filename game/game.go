@@ -7,14 +7,13 @@ import (
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/v2/audio"
 	"log"
-	"sync"
 	"time"
 )
 
 type Game struct {
-	actors      []actor.GameActor
+	actors      map[string]actor.GameActor
 	audioPlayer *audio.Player
-	mut         sync.RWMutex
+	//mutex       sync.RWMutex
 }
 
 const (
@@ -34,11 +33,11 @@ func (g *Game) Update(_ *ebiten.Image) error {
 		return nil
 	}
 
-	for idx, actor := range g.actors {
+	for _, actor := range g.actors {
 		if actor.IsActive() /* update active actor*/ {
 			actor.Update()
 		} else /* remove inactive actor*/ {
-			g.YankActor(idx)
+			g.RemoveActor(actor)
 		}
 	}
 
@@ -63,15 +62,13 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 	return
 }
 
-// YankActor removes actor at position specified by index parameter
-// probably not extremely efficient (might be issue with large number of actors)
-// but here it should work just fine
-func (g *Game) YankActor(index int) {
-	// log.Printf("YankActor: %d", index)
-	g.mut.RLock()
-	defer g.mut.RUnlock()
-	newActors := append(g.actors[:index], g.actors[index+1:]...)
-	g.actors = newActors
+// RemoveActor removes actor from internal actor map
+func (g *Game) RemoveActor(actor actor.GameActor) {
+	delete(g.actors, actor.Id())
+}
+
+func (g *Game) AppendActor(actor actor.GameActor) {
+	g.actors[actor.Id()] = actor
 }
 
 func transitionToSinglePlayerCallback(_ *pubsub.Message) {
@@ -110,12 +107,13 @@ func createImpactCallback(message *pubsub.Message) {
 	switch v := message.GetMessageBody().Data.(type) {
 	case pubsub.PositionNotificationPayload:
 		impactActor := actor.NewImpact(v.XPos, v.YPos, notificationBus)
-		game.actors = append(game.actors, impactActor)
+		game.AppendActor(impactActor)
 	}
 }
 
 func destroyOldActors() {
 	disableRendering()
+
 	for _, actor := range game.actors {
 		actor.Destroy()
 	}

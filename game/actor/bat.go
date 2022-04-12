@@ -1,6 +1,8 @@
 package actor
 
 import (
+	"fmt"
+	"github.com/gorustgames/gong/game/util"
 	"github.com/gorustgames/gong/pubsub"
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
@@ -85,9 +87,17 @@ func NewBat(playerLocation PlayerLocation, playerType PlayerType, notificationBu
 		_xPos = 680.0
 	}
 
+	var id string
+	if playerLocation == LeftPlayer {
+		id = fmt.Sprintf("actor-left-bat-%s", util.GenerateShortId())
+	} else {
+		id = fmt.Sprintf("actor-right-bat-%s", util.GenerateShortId())
+	}
+
 	newBat := &Bat{
 		base: GameActorBase{
 			IsActive: true,
+			Id:       id,
 		},
 		xPos:            _xPos,
 		yPos:            0,
@@ -179,11 +189,7 @@ func (b *Bat) Draw(screen *ebiten.Image) {
 }
 
 func (b *Bat) Id() string {
-	if b.playerLocation == LeftPlayer {
-		return "actor-left-bat"
-	} else {
-		return "actor-right-bat"
-	}
+	return b.base.Id
 }
 
 func (b *Bat) Destroy() {

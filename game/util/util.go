@@ -1,6 +1,7 @@
 package util
 
 import (
+	"crypto/rand"
 	"fmt"
 	"github.com/hajimehoshi/ebiten/v2/audio"
 	"github.com/hajimehoshi/ebiten/v2/audio/vorbis"
@@ -62,4 +63,16 @@ func NewAudioPlayer(asset string) *audio.Player {
 	}
 
 	return audioPlayer
+}
+
+// GenerateShortId generates short and (hopefully) uniqueue ID
+func GenerateShortId() string {
+	// alternativelly we could use https://github.com/teris-io/shortid
+	b := make([]byte, 8)
+	_, err := rand.Read(b)
+	if err != nil {
+		log.Fatal(err)
+	}
+	id := fmt.Sprintf("%X-%X", b[0:4], b[4:8])
+	return id
 }

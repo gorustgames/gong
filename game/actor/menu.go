@@ -1,6 +1,8 @@
 package actor
 
 import (
+	"fmt"
+	"github.com/gorustgames/gong/game/util"
 	"github.com/gorustgames/gong/pubsub"
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
@@ -29,6 +31,7 @@ func NewMenu(notificationBus *pubsub.Broker) *Menu {
 	newMenu := &Menu{
 		base: GameActorBase{
 			IsActive: true,
+			Id:       fmt.Sprintf("actor-menu-%s", util.GenerateShortId()),
 		},
 		picture0:        picture0,
 		picture1:        picture1,
@@ -75,7 +78,7 @@ func (m *Menu) Draw(screen *ebiten.Image) {
 }
 
 func (m *Menu) Id() string {
-	return "actor-menu"
+	return m.base.Id
 }
 
 func (m *Menu) Destroy() {

@@ -24,38 +24,57 @@ type GameActor interface {
 
 type GameActorBase struct {
 	IsActive bool
+	Id       string
 }
 
 // CreateActorsSinglePlayer
 // see https://stackoverflow.com/questions/17077074/array-of-pointers-to-different-struct-implementing-same-interface
-func CreateActorsSinglePlayer(notificationBus *pubsub.Broker) []GameActor {
+func CreateActorsSinglePlayer(notificationBus *pubsub.Broker) map[string]GameActor {
+	m := make(map[string]GameActor)
 
-	return []GameActor{
-		NewGameBoard(notificationBus),
-		NewBat(LeftPlayer, Human, notificationBus),
-		NewBat(RightPlayer, Computer, notificationBus),
-		NewBall(1, notificationBus),
-	}
+	a1 := NewGameBoard(notificationBus)
+	a2 := NewBat(LeftPlayer, Human, notificationBus)
+	a3 := NewBat(RightPlayer, Computer, notificationBus)
+	a4 := NewBall(1, notificationBus)
+
+	m[a1.Id()] = a1
+	m[a2.Id()] = a2
+	m[a3.Id()] = a3
+	m[a4.Id()] = a4
+
+	return m
 }
 
-func CreateActorsMultiPlayer(notificationBus *pubsub.Broker) []GameActor {
+func CreateActorsMultiPlayer(notificationBus *pubsub.Broker) map[string]GameActor {
+	m := make(map[string]GameActor)
 
-	return []GameActor{
-		NewGameBoard(notificationBus),
-		NewBat(LeftPlayer, Human, notificationBus),
-		NewBat(RightPlayer, Human, notificationBus),
-		NewBall(1, notificationBus),
-	}
+	a1 := NewGameBoard(notificationBus)
+	a2 := NewBat(LeftPlayer, Human, notificationBus)
+	a3 := NewBat(RightPlayer, Human, notificationBus)
+	a4 := NewBall(1, notificationBus)
+
+	m[a1.Id()] = a1
+	m[a2.Id()] = a2
+	m[a3.Id()] = a3
+	m[a4.Id()] = a4
+
+	return m
 }
 
-func CreateActorsMenu(notificationBus *pubsub.Broker) []GameActor {
-	return []GameActor{
-		NewMenu(notificationBus),
-	}
+func CreateActorsMenu(notificationBus *pubsub.Broker) map[string]GameActor {
+	m := make(map[string]GameActor)
+
+	a1 := NewMenu(notificationBus)
+	m[a1.Id()] = a1
+
+	return m
 }
 
-func CreateActorsGameOver(notificationBus *pubsub.Broker) []GameActor {
-	return []GameActor{
-		NewGameOver(notificationBus),
-	}
+func CreateActorsGameOver(notificationBus *pubsub.Broker) map[string]GameActor {
+	m := make(map[string]GameActor)
+
+	a1 := NewGameOver(notificationBus)
+	m[a1.Id()] = a1
+
+	return m
 }

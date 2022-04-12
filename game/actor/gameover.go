@@ -1,6 +1,8 @@
 package actor
 
 import (
+	"fmt"
+	"github.com/gorustgames/gong/game/util"
 	"github.com/gorustgames/gong/pubsub"
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
@@ -22,6 +24,7 @@ func NewGameOver(notificationBus *pubsub.Broker) *GameOver {
 	newGameOver := &GameOver{
 		base: GameActorBase{
 			IsActive: true,
+			Id:       fmt.Sprintf("actor-gameover-%s", util.GenerateShortId()),
 		},
 		picture:         picture,
 		notificationBus: notificationBus,
@@ -47,7 +50,7 @@ func (a *GameOver) Draw(screen *ebiten.Image) {
 }
 
 func (a *GameOver) Id() string {
-	return "actor-gameover"
+	return a.base.Id
 }
 
 func (a *GameOver) Destroy() {
