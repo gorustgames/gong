@@ -128,12 +128,13 @@ func (g *GameBoard) checkScore(score int) {
 func (g *GameBoard) leftBatMiss(message *pubsub.Message) {
 	g.leftScore += 1
 	g.playScore()
-
+	g.checkScore(g.leftScore)
 }
 
 func (g *GameBoard) rightBatMiss(message *pubsub.Message) {
 	g.rightScore += 1
 	g.playScore()
+	g.checkScore(g.rightScore)
 }
 
 func (g *GameBoard) updatePositions(message *pubsub.Message) {
