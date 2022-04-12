@@ -8,6 +8,7 @@ import (
 	"github.com/hajimehoshi/ebiten/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/audio"
 	"log"
+	"math"
 )
 
 type GameBoard struct {
@@ -99,8 +100,10 @@ func (g *GameBoard) Draw(screen *ebiten.Image) {
 	opRS := &ebiten.DrawImageOptions{}
 	opRS.GeoM.Translate(450, 50)
 
-	screen.DrawImage(g.digitsLeft[g.leftScore], opLS)
-	screen.DrawImage(g.digitsRight[g.rightScore], opRS)
+	idxL := int(math.Min(float64(g.leftScore), 9))
+	idxR := int(math.Min(float64(g.rightScore), 9))
+	screen.DrawImage(g.digitsLeft[idxL], opLS)
+	screen.DrawImage(g.digitsRight[idxR], opRS)
 
 	// debug print of positions of crucial game actors
 	/*ebitenutil.DebugPrint(
