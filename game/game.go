@@ -7,13 +7,14 @@ import (
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/v2/audio"
 	"log"
+	"sync"
 	"time"
 )
 
 type Game struct {
-	actors      map[string]actor.GameActor
+	actors      []actor.GameActor
 	audioPlayer *audio.Player
-	//mutex       sync.RWMutex
+	mutex       sync.RWMutex
 }
 
 const (
@@ -33,11 +34,12 @@ func (g *Game) Update(_ *ebiten.Image) error {
 		return nil
 	}
 
-	for _, actor := range g.actors {
+	for i := len(g.actors) - 1; i >= 0; i-- {
+		actor := g.actors[i]
 		if actor.IsActive() /* update active actor*/ {
 			actor.Update()
 		} else /* remove inactive actor*/ {
-			g.RemoveActor(actor)
+			g.RemoveLastActor()
 		}
 	}
 
@@ -63,12 +65,16 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 }
 
 // RemoveActor removes actor from internal actor map
-func (g *Game) RemoveActor(actor actor.GameActor) {
-	delete(g.actors, actor.Id())
+func (g *Game) RemoveLastActor() {
+	g.mutex.RLock()
+	defer g.mutex.RUnlock()
+	g.actors = g.actors[:len(g.actors)-1]
 }
 
 func (g *Game) AppendActor(actor actor.GameActor) {
-	g.actors[actor.Id()] = actor
+	g.mutex.RLock()
+	defer g.mutex.RUnlock()
+	g.actors = append(g.actors, actor)
 }
 
 func transitionToSinglePlayerCallback(_ *pubsub.Message) {
