@@ -94,11 +94,11 @@ func (g *GameBoard) Draw(screen *ebiten.Image) {
 
 	// left score
 	opLS := &ebiten.DrawImageOptions{}
-	opLS.GeoM.Translate(280, 50)
+	opLS.GeoM.Translate(400-75, 50) // digit jpg is 75x75
 
 	// right score
 	opRS := &ebiten.DrawImageOptions{}
-	opRS.GeoM.Translate(450, 50)
+	opRS.GeoM.Translate(400, 50)
 
 	idxL := int(math.Min(float64(g.leftScore), 9))
 	idxR := int(math.Min(float64(g.rightScore), 9))
@@ -144,7 +144,10 @@ func (g *GameBoard) checkScore(score int) {
 	if score > 9 {
 		g.notificationBus.Publish(pubsub.CHANGE_GAME_STATE_GAME_OVER_TOPIC, pubsub.GameNotification{
 			ActorType: pubsub.GameOverActor,
-			Data:      nil,
+			Data: pubsub.GameOverNotificationPayload{
+				ScoreLeft:  g.leftScore,
+				ScoreRight: g.rightScore,
+			},
 		})
 	}
 }

@@ -33,6 +33,11 @@ type PositionNotificationPayload struct {
 	YPos float64
 }
 
+type GameOverNotificationPayload struct {
+	ScoreLeft  int
+	ScoreRight int
+}
+
 type GameNotification struct {
 	ActorType GameNotificationActorType
 	Data      any

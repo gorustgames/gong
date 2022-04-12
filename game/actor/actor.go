@@ -55,8 +55,8 @@ func CreateActorsMenu(notificationBus *pubsub.Broker) []GameActor {
 	}
 }
 
-func CreateActorsGameOver(notificationBus *pubsub.Broker) []GameActor {
+func CreateActorsGameOver(notificationBus *pubsub.Broker, scoreLeft int, scoreRight int) []GameActor {
 	return []GameActor{
-		NewGameOver(notificationBus),
+		NewGameOver(notificationBus, scoreLeft, scoreRight),
 	}
 }

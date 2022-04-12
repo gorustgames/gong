@@ -103,9 +103,13 @@ func transitionToMenuCallback(_ *pubsub.Message) {
 	enableRendering()
 }
 
-func transitionToGameoverCallback(_ *pubsub.Message) {
+func transitionToGameoverCallback(message *pubsub.Message) {
 	destroyOldActors()
-	game.actors = actor.CreateActorsGameOver(notificationBus)
+
+	switch v := message.GetMessageBody().Data.(type) {
+	case pubsub.GameOverNotificationPayload:
+		game.actors = actor.CreateActorsGameOver(notificationBus, v.ScoreLeft, v.ScoreRight)
+	}
 	enableRendering()
 }
 
